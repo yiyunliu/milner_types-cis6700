@@ -1,0 +1,274 @@
+embed {{ coq-preamble
+Require Export Metalib.LibLNgen. 
+}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% METAVARIABLES
+
+metavar tmvar {{ tex \text{Term variables} }}, x, y, z ::=
+  {{ repr-locally-nameless }}      
+  {{ com variables }}
+  {{ lex alphanum }}
+
+metavar tyvar {{ tex \text{Type variables} }}, a, b ::=
+  {{ repr-locally-nameless }}
+  {{ com type variables }}
+  {{ lex alphanum }}
+
+indexvar integer {{ tex \text{Integers} }}, i ::=
+  {{ coq nat }}
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GRAMMAR
+
+grammar
+
+ty_mono {{ tex \text{Monotypes} }}, tau {{ tex \tau }} :: 'ty_mono_' ::= {{ com Monotypes }}
+  | Int            :: :: base
+    {{ tex \texttt{Int} }}
+  | a              :: :: var
+  | tau1 -> tau2         :: :: func
+    {{ tex [[tau1]] [[->]] [[tau2]] }}
+
+ty_rho {{ tex \text{Rho-types} }}, rho {{ tex \rho }} :: 'ty_rho_' ::= {{ com Rho-types }}
+  | tau :: :: tau
+  | sig -> sig'         :: :: func
+    {{ tex [[sig]] [[->]] [[sig']] }}
+  | ( rho )                 :: S :: paren 
+    {{ tex ([[rho]]) }}
+    {{ coq ([[rho]]) }}
+
+ty_poly {{ tex \text{Polytypes} }}, sig {{ tex \sigma }} :: 'ty_poly_' ::=
+  | rho                     :: :: rho
+  | forall a . sig          :: :: poly_gen
+    (+ bind a in sig +)
+    {{ tex \forall [[a]] . [[sig]] }}
+
+  | [ a |-> tau ] sig      :: M :: subst
+    {{ tex \left[ [[a]] \mapsto [[tau]] \right] [[sig]] }}
+    {{ coq (open_ty_poly_wrt_ty_mono[[a sig]][[tau]])}}
+
+tm {{ tex \text{Terms} }}, t, u :: 'exp_' ::= 
+  | i                     ::    :: lit
+    {{ com Literal }}
+  | x                     ::    :: var 
+    {{ com Variable }}
+
+  | \ x . t               ::    :: abs 
+    (+ bind x in t +)
+    {{ tex \lambda [[x]] . [[t]] }}
+    {{ com Abstraction }}
+  | t u             ::   :: app 
+    {{ tex [[t]] \; [[u]] }}
+    {{ com Application }}
+
+  | \ ( annot x sig ) . t       ::    :: typed_abs 
+    (+ bind x in t +)
+    {{ tex \lambda ([[x]] :: [[sig]]). [[t]] }}
+    {{ com Typed abstraction }}
+  | let x = u in t          ::    :: let 
+    (+ bind x in t +)
+    {{ tex \texttt{let}\; [[x]] = [[u]] \;\texttt{in}\; [[t]] }}
+    {{ com Local binding }}
+
+  | annot t sig               ::    :: type_anno
+    {{ tex [[t]] :: [[sig]] }}
+    {{ com Type annotation }}
+    
+  | ( t )                 :: S :: paren 
+    {{ tex ([[t]]) }}
+    {{ coq ([[t]]) }}
+
+  | t [ x ~> t' ]         :: M :: subst
+    {{ tex [[t]] \left[ [[x]] \leadsto [[t']] \right] }}
+    {{ coq (open_tm_wrt_tm[[x t]][[t']])}}
+
+ctx {{ tex \text{Typing contexts} }}, G {{ tex \Gamma }} :: ''     ::= {{ coq list ( atom * ty_poly ) }}
+  | empty          ::   :: Empty  {{ coq nil }}
+                                  {{ tex \epsilon }}
+                                  {{ com empty context }}
+  | G , x : sig      ::   :: Cons {{ coq (([[x]]~[[sig]])++[[G]]) }}
+                                  {{ com assumption }}
+
+substitutions
+  single t x      :: subst
+  single sig a    :: subst_ty_poly
+  single rho a    :: subst_ty_rho
+  single tau a    :: subst_ty_mono
+  single ctx a    :: subst_ty_ctx
+
+freevars
+  t x     :: fv
+  sig a   :: ftv_poly
+  rho a   :: ftv_rho
+  tau a   :: ftv_mono
+  ctx a   :: ftv_ctx
+
+embed
+{{ coq
+Fixpoint ftv_mono_ctx (G:ctx) : vars :=
+  match G with
+  | nil => {}
+  | (_, sig) :: tl => (ftv_mono_ty_poly sig) \u (ftv_mono_ctx tl)
+end.
+}}
+%%  values  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+value, v :: 'val_' ::=
+  | i                     ::    :: nat
+  | \ x . t               ::    :: abs 
+    (+ bind x in t +)
+    {{ tex \lambda [[x]] . [[t]] }}
+  | \ ( annot x sig ) . t ::    :: typed_abs 
+    (+ bind x in t +)
+    {{ tex \lambda ([[x]] :: [[sig]]). [[t]] }}
+
+fv :: 'fv_' ::=
+  | fv ( t ) :: M :: tm
+    {{ coq fv_tm [[t]] }}
+
+ftvany :: 'ftv_' ::=
+  | ftv ( tau ) :: M :: mono
+    {{ coq ftv_mono_ty_mono[[tau]] }}
+    {{ tex [[ftv]]([[tau]])}}
+  | ftv ( rho ) :: M :: rho
+    {{ coq ftv_mono_ty_rho[[rho]] }}
+    {{ tex [[ftv]]([[rho]])}}
+  | ftv ( sig ) :: M :: poly
+    {{ coq ftv_mono_ty_poly[[sig]] }}
+    {{ tex [[ftv]]([[sig]])}}
+  | ftv ( G )   :: M :: ctx
+    {{ coq ftv_mono_ctx[[G]] }}
+    {{ tex [[ftv]]([[G]])}}
+
+subrules 
+  v <:: t
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+terminals :: 'terminals_' ::=
+  | -->               ::   :: step       {{ tex \longrightarrow }}
+  | ->                ::   :: arrow      {{ tex \to }}
+  | annot             ::   :: annot      {{ tex :: }}
+  | fv                ::   :: fv         {{ tex \text{fv} }}
+  | ftv               ::   :: ftv        {{ tex \text{ftv} }}
+  | in                ::   :: in         {{ tex \in }}
+  | notin             ::   :: notin      {{ tex \not\in }}
+  | |-                ::   :: entails    {{ tex \vdash }}
+
+formula :: 'formula_' ::=
+  | judgement                ::   :: judgement
+  | is_value v               ::   :: is_value
+    {{ coq is_value_of_tm [[v]] }}
+	  {{ tex \mathsf{value}\,[[v]] }}
+  | uniq G                   ::   :: uniqG
+    {{ coq uniq [[G]] }}
+	  {{ tex \mathsf{uniq}\,[[G]] }}
+  | closed sig               ::   :: closed_sig
+    {{ coq ftv_mono_ty_poly[[sig]][=]{} }}
+	  {{ tex \mathsf{closed}\,[[sig]] }}
+  | a notin ftvany           ::   :: in_ftv
+    {{ coq [[a]]`notin`[[ftvany]] }}
+    {{ tex [[a]][[notin]][[ftvany]] }}
+  | x : sig in G             ::   :: inG
+    {{ coq binds[[x]][[sig]][[G]] }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Rules
+
+defns 
+JTyping :: '' ::=
+
+defn
+G |- t : sig ::    :: typing :: 'typ_'
+{{ tex [[G]][[|-]][[t]]:[[sig]] }}
+by
+
+-------------- :: int
+ G |- i : Int
+
+ uniq G
+ x : sig in G
+-------------- :: var
+ G |- i : sig
+
+ G, x : tau |- t : rho
+------------------------------- :: abs
+ G |- (\x . t) : (tau -> rho)
+
+ closed tau
+ G, x : tau |- t : rho
+------------------------------------------- :: annot_abs
+ G |- (\ (annot x tau) . t) : (tau -> rho)
+
+ G |- t : tau -> rho
+ G |- u : tau
+--------------------- :: app
+ G |- t u : rho
+
+ G |- u : sig
+ G, x : sig |- t : rho
+--------------------------- :: let
+ G |- let x = u in t : rho
+
+ closed sig
+ G |- t : sig
+--------------------------- :: annot
+ G |- (annot t sig) : sig
+
+ a notin ftv (G)
+ G |- t : rho
+------------------------- :: gen
+ G |- t : forall a . rho
+
+ G |- t : forall a . rho
+------------------------------ :: inst
+ G |- t : [ a |-> tau ] rho
+
+
+defns 
+JStep :: '' ::=
+
+defn
+t --> u ::    :: step :: 'step_'
+{{ tex [[t]] [[-->]] [[u]] }}
+by
+ 
+ u --> u'
+------------------------------------ :: let1
+ let x = u in t --> let x = u' in t
+
+ t --> t'
+------------------------------------ :: let2
+ let x = v in t --> let x = v in t'
+
+--------------------------------- :: let
+ let x = v in t --> t [ x ~> v ]
+
+ t --> t'
+------------------------------ :: app1
+ t u --> t' u
+
+ u --> u'
+------------------------------ :: app2
+ (\ x . t) u --> (\ x . t) u'
+
+------------------------------ :: app
+ (\ x . t) v --> t [ x ~> v ]
+
+ u --> u'
+------------------------------------------------------ :: annot_app2
+ (\ (annot x sig) . t) u --> (\ (annot x sig) . t) u'
+
+------------------------------------------------------ :: annot_app
+ (\ (annot x sig) . t) v --> t [ x ~> v ]
+
+------------------- :: erase
+ annot t sig --> t

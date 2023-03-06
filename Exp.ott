@@ -33,8 +33,8 @@ ty_mono {{ tex \text{Monotypes} }}, tau {{ tex \tau }} :: 'ty_mono_' ::= {{ com 
 
 ty_rho {{ tex \text{Rho-types} }}, rho {{ tex \rho }} :: 'ty_rho_' ::= {{ com Rho-types }}
   | tau :: :: tau
-  | sig -> sig'         :: :: func
-    {{ tex [[sig]] [[->]] [[sig']] }}
+  % | sig -> sig'         :: :: func
+  %   {{ tex [[sig]] [[->]] [[sig']] }}
   | ( rho )                 :: S :: paren 
     {{ tex ([[rho]]) }}
     {{ coq ([[rho]]) }}
@@ -51,6 +51,7 @@ ty_poly {{ tex \text{Polytypes} }}, sig {{ tex \sigma }} :: 'ty_poly_' ::=
 
 tm {{ tex \text{Terms} }}, t, u :: 'exp_' ::= 
   | i                     ::    :: lit
+    {{ coq (exp_lit [[i]]) }}
     {{ com Literal }}
   | x                     ::    :: var 
     {{ com Variable }}
@@ -84,35 +85,18 @@ tm {{ tex \text{Terms} }}, t, u :: 'exp_' ::=
     {{ tex [[t]] \left[ [[x]] \leadsto [[t']] \right] }}
     {{ coq (open_tm_wrt_tm[[x t]][[t']])}}
 
-ctx {{ tex \text{Typing contexts} }}, G {{ tex \Gamma }} :: ''     ::= {{ coq list ( atom * ty_poly ) }}
-  | empty          ::   :: Empty  {{ coq nil }}
-                                  {{ tex \epsilon }}
-                                  {{ com empty context }}
-  | G , x : sig      ::   :: Cons {{ coq (([[x]]~[[sig]])++[[G]]) }}
-                                  {{ com assumption }}
-
 substitutions
   single t x      :: subst
   single sig a    :: subst_ty_poly
   single rho a    :: subst_ty_rho
   single tau a    :: subst_ty_mono
-  single ctx a    :: subst_ty_ctx
 
 freevars
   t x     :: fv
   sig a   :: ftv_poly
   rho a   :: ftv_rho
   tau a   :: ftv_mono
-  ctx a   :: ftv_ctx
 
-embed
-{{ coq
-Fixpoint ftv_mono_ctx (G:ctx) : vars :=
-  match G with
-  | nil => {}
-  | (_, sig) :: tl => (ftv_mono_ty_poly sig) \u (ftv_mono_ctx tl)
-end.
-}}
 %%  values  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 grammar
@@ -125,6 +109,24 @@ value, v :: 'val_' ::=
   | \ ( annot x sig ) . t ::    :: typed_abs 
     (+ bind x in t +)
     {{ tex \lambda ([[x]] :: [[sig]]). [[t]] }}
+
+ctx {{ tex \text{Typing contexts} }}, G {{ tex \Gamma }} :: '' ::= {{ coq list ( atom * ty_poly ) }}
+  | empty          ::   :: Empty  {{ coq nil }}
+                                  {{ tex \epsilon }}
+                                  {{ com empty context }}
+  | G , x : sig      ::   :: Cons {{ coq (([[x]]~[[sig]])++[[G]]) }}
+                                  {{ com assumption }}
+
+embed
+{{ coq
+Fixpoint ftv_mono_ctx (G:ctx) : vars :=
+  match G with
+  | nil => {}
+  | (_, sig) :: tl => (ftv_mono_ty_poly sig) \u (ftv_mono_ctx tl)
+end.
+}}
+
+grammar
 
 fv :: 'fv_' ::=
   | fv ( t ) :: M :: tm
@@ -175,6 +177,7 @@ formula :: 'formula_' ::=
     {{ coq ftv_mono_ty_poly[[sig]][=]{} }}
 	  {{ tex \mathsf{closed}\,[[sig]] }}
   | a notin ftvany           ::   :: in_ftv
+    % (+ bind a in ftvany +)
     {{ coq [[a]]`notin`[[ftvany]] }}
     {{ tex [[a]][[notin]][[ftvany]] }}
   | x : sig in G             ::   :: inG
@@ -199,19 +202,14 @@ by
 -------------- :: var
  G |- i : sig
 
- G, x : tau |- t : rho
+ G, x : tau1 |- t : tau2
 ------------------------------- :: abs
- G |- (\x . t) : (tau -> rho)
+ G |- (\x . t) : (tau1 -> tau2)
 
- closed tau
- G, x : tau |- t : rho
-------------------------------------------- :: annot_abs
- G |- (\ (annot x tau) . t) : (tau -> rho)
-
- G |- t : tau -> rho
- G |- u : tau
+ G |- t : tau1 -> tau2
+ G |- u : tau1
 --------------------- :: app
- G |- t u : rho
+ G |- t u : tau2
 
  G |- u : sig
  G, x : sig |- t : rho
@@ -223,7 +221,7 @@ by
 --------------------------- :: annot
  G |- (annot t sig) : sig
 
- a notin ftv (G)
+%  b notin ftv (G)
  G |- t : rho
 ------------------------- :: gen
  G |- t : forall a . rho
@@ -244,10 +242,6 @@ by
  u --> u'
 ------------------------------------ :: let1
  let x = u in t --> let x = u' in t
-
- t --> t'
------------------------------------- :: let2
- let x = v in t --> let x = v in t'
 
 --------------------------------- :: let
  let x = v in t --> t [ x ~> v ]

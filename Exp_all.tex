@@ -49,7 +49,6 @@
 \newcommand{\otttyXXrho}{
 \ottrulehead{\text{Rho-types}  ,\ \rho}{::=}{\ottcom{Rho-types}}\ottprodnewline
 \ottfirstprodline{|}{\tau}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \sigma   \to   \sigma' }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ ( \rho ) } {\textsf{S}}{}{}{}}
 
 \newcommand{\otttyXXpoly}{
@@ -70,16 +69,16 @@
 \ottprodline{|}{ ( \ottnt{t} ) } {\textsf{S}}{}{}{}\ottprodnewline
 \ottprodline{|}{ \ottnt{t}  \left[  \ottmv{x}  \leadsto  \ottnt{t'}  \right] } {\textsf{M}}{}{}{}}
 
-\newcommand{\ottctx}{
-\ottrulehead{\text{Typing contexts}  ,\ \Gamma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \epsilon }{}{}{}{\ottcom{empty context}}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \sigma}{}{}{}{\ottcom{assumption}}}
-
 \newcommand{\ottvalue}{
 \ottrulehead{\ottnt{value}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottmv{i}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \lambda  \ottmv{x}  .  \ottnt{t} }{}{\textsf{bind}\; \ottmv{x}\; \textsf{in}\; \ottnt{t}}{}{}\ottprodnewline
 \ottprodline{|}{ \lambda ( \ottmv{x}  ::  \sigma ).  \ottnt{t} }{}{\textsf{bind}\; \ottmv{x}\; \textsf{in}\; \ottnt{t}}{}{}}
+
+\newcommand{\ottctx}{
+\ottrulehead{\text{Typing contexts}  ,\ \Gamma}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{ \epsilon }{}{}{}{\ottcom{empty context}}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \sigma}{}{}{}{\ottcom{assumption}}}
 
 \newcommand{\ottfv}{
 \ottrulehead{\ottnt{fv}}{::=}{}\ottprodnewline
@@ -134,8 +133,8 @@
 \ottprodline{|}{\text{Rho-types}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\text{Polytypes}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\text{Terms}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\text{Typing contexts}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{value}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\text{Typing contexts}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{fv}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{ftvany}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}\ottprodnewline
@@ -146,8 +145,8 @@
 \otttyXXrho\ottinterrule
 \otttyXXpoly\ottinterrule
 \otttm\ottinterrule
-\ottctx\ottinterrule
 \ottvalue\ottinterrule
+\ottctx\ottinterrule
 \ottfv\ottinterrule
 \ottftvany\ottinterrule
 \ottterminals\ottinterrule
@@ -178,27 +177,18 @@
 
 
 \newcommand{\ottdruletypXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{ \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau \vdash \ottnt{t} : \rho }%
+\ottpremise{ \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau_{{\mathrm{1}}} \vdash \ottnt{t} : \tau_{{\mathrm{2}}} }%
 }{
- \Gamma \vdash  (  \lambda  \ottmv{x}  .  \ottnt{t}  )  :  (  \tau   \to   \rho  )  }{%
+ \Gamma \vdash  (  \lambda  \ottmv{x}  .  \ottnt{t}  )  :  (  \tau_{{\mathrm{1}}}   \to   \tau_{{\mathrm{2}}}  )  }{%
 {\ottdrulename{typ\_abs}}{}%
 }}
 
 
-\newcommand{\ottdruletypXXannotXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{closed}\, \tau }%
-\ottpremise{ \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \tau \vdash \ottnt{t} : \rho }%
-}{
- \Gamma \vdash  (  \lambda ( \ottmv{x}  ::  \tau ).  \ottnt{t}  )  :  (  \tau   \to   \rho  )  }{%
-{\ottdrulename{typ\_annot\_abs}}{}%
-}}
-
-
 \newcommand{\ottdruletypXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{ \Gamma \vdash \ottnt{t} :  \tau   \to   \rho  }%
-\ottpremise{ \Gamma \vdash \ottnt{u} : \tau }%
+\ottpremise{ \Gamma \vdash \ottnt{t} :  \tau_{{\mathrm{1}}}   \to   \tau_{{\mathrm{2}}}  }%
+\ottpremise{ \Gamma \vdash \ottnt{u} : \tau_{{\mathrm{1}}} }%
 }{
- \Gamma \vdash  \ottnt{t}  \;  \ottnt{u}  : \rho }{%
+ \Gamma \vdash  \ottnt{t}  \;  \ottnt{u}  : \tau_{{\mathrm{2}}} }{%
 {\ottdrulename{typ\_app}}{}%
 }}
 
@@ -222,7 +212,6 @@
 
 
 \newcommand{\ottdruletypXXgen}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottmv{a} \not\in  \text{ftv} ( \Gamma )  }%
 \ottpremise{ \Gamma \vdash \ottnt{t} : \rho }%
 }{
  \Gamma \vdash \ottnt{t} :  \forall  \ottmv{a}  .  \rho  }{%
@@ -241,7 +230,6 @@
 \ottusedrule{\ottdruletypXXint{}}
 \ottusedrule{\ottdruletypXXvar{}}
 \ottusedrule{\ottdruletypXXabs{}}
-\ottusedrule{\ottdruletypXXannotXXabs{}}
 \ottusedrule{\ottdruletypXXapp{}}
 \ottusedrule{\ottdruletypXXlet{}}
 \ottusedrule{\ottdruletypXXannot{}}
@@ -260,14 +248,6 @@
 }{
   \texttt{let}\;  \ottmv{x}  =  \ottnt{u}  \;\texttt{in}\;  \ottnt{t}    \longrightarrow    \texttt{let}\;  \ottmv{x}  =  \ottnt{u'}  \;\texttt{in}\;  \ottnt{t}  }{%
 {\ottdrulename{step\_let1}}{}%
-}}
-
-
-\newcommand{\ottdrulestepXXletTwo}[1]{\ottdrule[#1]{%
-\ottpremise{ \ottnt{t}   \longrightarrow   \ottnt{t'} }%
-}{
-  \texttt{let}\;  \ottmv{x}  =  \ottnt{v}  \;\texttt{in}\;  \ottnt{t}    \longrightarrow    \texttt{let}\;  \ottmv{x}  =  \ottnt{v}  \;\texttt{in}\;  \ottnt{t'}  }{%
-{\ottdrulename{step\_let2}}{}%
 }}
 
 
@@ -324,7 +304,6 @@
 
 \newcommand{\ottdefnstep}[1]{\begin{ottdefnblock}[#1]{$ \ottnt{t}   \longrightarrow   \ottnt{u} $}{}
 \ottusedrule{\ottdrulestepXXletOne{}}
-\ottusedrule{\ottdrulestepXXletTwo{}}
 \ottusedrule{\ottdrulestepXXlet{}}
 \ottusedrule{\ottdrulestepXXappOne{}}
 \ottusedrule{\ottdrulestepXXappTwo{}}
@@ -351,7 +330,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        18 good    0 bad
-Definition rule clauses: 37 good    0 bad
+Definition rules:        16 good    0 bad
+Definition rule clauses: 31 good    0 bad
 \end{verbatim}
 \end{document}

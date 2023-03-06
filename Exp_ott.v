@@ -17,9 +17,9 @@ Inductive ty_mono : Set :=  (*r Monotypes *)
  | ty_mono_func (tau1:ty_mono) (tau2:ty_mono).
 
 Inductive ty_rho : Set :=  (*r Rho-types *)
- | ty_rho_tau (tau:ty_mono)
- | ty_rho_func (sig:ty_poly) (sig':ty_poly)
-with ty_poly : Set := 
+ | ty_rho_tau (tau:ty_mono).
+
+Inductive ty_poly : Set := 
  | ty_poly_rho (rho:ty_rho)
  | ty_poly_poly_gen (sig:ty_poly).
 
@@ -47,7 +47,7 @@ Definition ctx : Set := list ( atom * ty_poly ).
 (** subrules *)
 Definition is_value_of_tm (t5:tm) : bool :=
   match t5 with
-  | (exp_lit i) => (true)
+  |  (exp_lit  i )  => (true)
   | (exp_var_b nat) => false
   | (exp_var_f x) => false
   | (exp_abs t) => (true)
@@ -67,20 +67,20 @@ Fixpoint open_ty_mono_wrt_ty_mono_rec (k:nat) (tau_5:ty_mono) (tau__6:ty_mono) {
   | (ty_mono_func tau1 tau2) => ty_mono_func (open_ty_mono_wrt_ty_mono_rec k tau_5 tau1) (open_ty_mono_wrt_ty_mono_rec k tau_5 tau2)
 end.
 
+Definition open_ty_rho_wrt_ty_mono_rec (k:nat) (tau5:ty_mono) (rho5:ty_rho) : ty_rho :=
+  match rho5 with
+  | (ty_rho_tau tau) => ty_rho_tau (open_ty_mono_wrt_ty_mono_rec k tau5 tau)
+end.
+
 Fixpoint open_ty_poly_wrt_ty_mono_rec (k:nat) (tau5:ty_mono) (sig5:ty_poly) {struct sig5}: ty_poly :=
   match sig5 with
   | (ty_poly_rho rho) => ty_poly_rho (open_ty_rho_wrt_ty_mono_rec k tau5 rho)
   | (ty_poly_poly_gen sig) => ty_poly_poly_gen (open_ty_poly_wrt_ty_mono_rec (S k) tau5 sig)
-end
-with open_ty_rho_wrt_ty_mono_rec (k:nat) (tau5:ty_mono) (rho5:ty_rho) : ty_rho :=
-  match rho5 with
-  | (ty_rho_tau tau) => ty_rho_tau (open_ty_mono_wrt_ty_mono_rec k tau5 tau)
-  | (ty_rho_func sig sig') => ty_rho_func (open_ty_poly_wrt_ty_mono_rec k tau5 sig) (open_ty_poly_wrt_ty_mono_rec k tau5 sig')
 end.
 
 Fixpoint open_tm_wrt_ty_mono_rec (k:nat) (tau5:ty_mono) (t5:tm) {struct t5}: tm :=
   match t5 with
-  | (exp_lit i) => exp_lit i
+  |  (exp_lit  i )  => exp_lit i
   | (exp_var_b nat) => exp_var_b nat
   | (exp_var_f x) => exp_var_f x
   | (exp_abs t) => exp_abs (open_tm_wrt_ty_mono_rec k tau5 t)
@@ -92,7 +92,7 @@ end.
 
 Fixpoint open_tm_wrt_tm_rec (k:nat) (t5:tm) (t_6:tm) {struct t_6}: tm :=
   match t_6 with
-  | (exp_lit i) => exp_lit i
+  |  (exp_lit  i )  => exp_lit i
   | (exp_var_b nat) => if (k === nat) then t5 else (exp_var_b nat)
   | (exp_var_f x) => exp_var_f x
   | (exp_abs t) => exp_abs (open_tm_wrt_tm_rec (S k) t5 t)
@@ -126,27 +126,25 @@ Inductive lc_ty_mono : ty_mono -> Prop :=    (* defn lc_ty_mono *)
      (lc_ty_mono tau2) ->
      (lc_ty_mono (ty_mono_func tau1 tau2)).
 
-(* defns LC_ty_poly_ty_rho *)
+(* defns LC_ty_rho *)
+Inductive lc_ty_rho : ty_rho -> Prop :=    (* defn lc_ty_rho *)
+ | lc_ty_rho_tau : forall (tau:ty_mono),
+     (lc_ty_mono tau) ->
+     (lc_ty_rho (ty_rho_tau tau)).
+
+(* defns LC_ty_poly *)
 Inductive lc_ty_poly : ty_poly -> Prop :=    (* defn lc_ty_poly *)
  | lc_ty_poly_rho : forall (rho:ty_rho),
      (lc_ty_rho rho) ->
      (lc_ty_poly (ty_poly_rho rho))
  | lc_ty_poly_poly_gen : forall (L:vars) (sig:ty_poly),
       ( forall a , a \notin  L  -> lc_ty_poly  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  )  ->
-     (lc_ty_poly (ty_poly_poly_gen sig))
-with lc_ty_rho : ty_rho -> Prop :=    (* defn lc_ty_rho *)
- | lc_ty_rho_tau : forall (tau:ty_mono),
-     (lc_ty_mono tau) ->
-     (lc_ty_rho (ty_rho_tau tau))
- | lc_ty_rho_func : forall (sig sig':ty_poly),
-     (lc_ty_poly sig) ->
-     (lc_ty_poly sig') ->
-     (lc_ty_rho (ty_rho_func sig sig')).
+     (lc_ty_poly (ty_poly_poly_gen sig)).
 
 (* defns LC_tm *)
 Inductive lc_tm : tm -> Prop :=    (* defn lc_tm *)
  | lc_exp_lit : forall (i:integer),
-     (lc_tm (exp_lit i))
+     (lc_tm  (exp_lit  i ) )
  | lc_exp_var_f : forall (x:tmvar),
      (lc_tm (exp_var_f x))
  | lc_exp_abs : forall (L:vars) (t:tm),
@@ -177,20 +175,20 @@ Fixpoint ftv_mono_ty_mono (tau_5:ty_mono) : vars :=
   | (ty_mono_func tau1 tau2) => (ftv_mono_ty_mono tau1) \u (ftv_mono_ty_mono tau2)
 end.
 
+Definition ftv_mono_ty_rho (rho5:ty_rho) : vars :=
+  match rho5 with
+  | (ty_rho_tau tau) => (ftv_mono_ty_mono tau)
+end.
+
 Fixpoint ftv_mono_ty_poly (sig5:ty_poly) : vars :=
   match sig5 with
   | (ty_poly_rho rho) => (ftv_mono_ty_rho rho)
   | (ty_poly_poly_gen sig) => (ftv_mono_ty_poly sig)
-end
-with ftv_mono_ty_rho (rho5:ty_rho) : vars :=
-  match rho5 with
-  | (ty_rho_tau tau) => (ftv_mono_ty_mono tau)
-  | (ty_rho_func sig sig') => (ftv_mono_ty_poly sig) \u (ftv_mono_ty_poly sig')
 end.
 
 Fixpoint ftv_mono_tm (t5:tm) : vars :=
   match t5 with
-  | (exp_lit i) => {}
+  |  (exp_lit  i )  => {}
   | (exp_var_b nat) => {}
   | (exp_var_f x) => {}
   | (exp_abs t) => (ftv_mono_tm t)
@@ -202,7 +200,7 @@ end.
 
 Fixpoint fv_tm (t5:tm) : vars :=
   match t5 with
-  | (exp_lit i) => {}
+  |  (exp_lit  i )  => {}
   | (exp_var_b nat) => {}
   | (exp_var_f x) => {{x}}
   | (exp_abs t) => (fv_tm t)
@@ -221,20 +219,20 @@ Fixpoint subst_ty_mono_ty_mono (tau_5:ty_mono) (a5:tyvar) (tau__6:ty_mono) {stru
   | (ty_mono_func tau1 tau2) => ty_mono_func (subst_ty_mono_ty_mono tau_5 a5 tau1) (subst_ty_mono_ty_mono tau_5 a5 tau2)
 end.
 
+Definition subst_ty_mono_ty_rho (tau5:ty_mono) (a5:tyvar) (rho5:ty_rho) : ty_rho :=
+  match rho5 with
+  | (ty_rho_tau tau) => ty_rho_tau (subst_ty_mono_ty_mono tau5 a5 tau)
+end.
+
 Fixpoint subst_ty_mono_ty_poly (tau5:ty_mono) (a5:tyvar) (sig5:ty_poly) {struct sig5} : ty_poly :=
   match sig5 with
   | (ty_poly_rho rho) => ty_poly_rho (subst_ty_mono_ty_rho tau5 a5 rho)
   | (ty_poly_poly_gen sig) => ty_poly_poly_gen (subst_ty_mono_ty_poly tau5 a5 sig)
-end
-with subst_ty_mono_ty_rho (tau5:ty_mono) (a5:tyvar) (rho5:ty_rho) {struct rho5} : ty_rho :=
-  match rho5 with
-  | (ty_rho_tau tau) => ty_rho_tau (subst_ty_mono_ty_mono tau5 a5 tau)
-  | (ty_rho_func sig sig') => ty_rho_func (subst_ty_mono_ty_poly tau5 a5 sig) (subst_ty_mono_ty_poly tau5 a5 sig')
 end.
 
 Fixpoint subst_ty_mono_tm (tau5:ty_mono) (a5:tyvar) (t5:tm) {struct t5} : tm :=
   match t5 with
-  | (exp_lit i) => exp_lit i
+  |  (exp_lit  i )  => exp_lit i
   | (exp_var_b nat) => exp_var_b nat
   | (exp_var_f x) => exp_var_f x
   | (exp_abs t) => exp_abs (subst_ty_mono_tm tau5 a5 t)
@@ -246,7 +244,7 @@ end.
 
 Fixpoint subst_tm (t5:tm) (x5:tmvar) (t_6:tm) {struct t_6} : tm :=
   match t_6 with
-  | (exp_lit i) => exp_lit i
+  |  (exp_lit  i )  => exp_lit i
   | (exp_var_b nat) => exp_var_b nat
   | (exp_var_f x) => (if eq_var x x5 then t5 else (exp_var_f x))
   | (exp_abs t) => exp_abs (subst_tm t5 x5 t)
@@ -268,22 +266,18 @@ end.
 (* defns JTyping *)
 Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
  | typ_int : forall (G:ctx) (i:integer),
-     typing G (exp_lit i) (ty_poly_rho (ty_rho_tau ty_mono_base))
+     typing G  (exp_lit  i )  (ty_poly_rho (ty_rho_tau ty_mono_base))
  | typ_var : forall (G:ctx) (i:integer) (sig:ty_poly) (x:tmvar),
       uniq  G  ->
       binds x sig G  ->
-     typing G (exp_lit i) sig
- | typ_abs : forall (L:vars) (G:ctx) (t:tm) (tau:ty_mono) (rho:ty_rho),
-      ( forall x , x \notin  L  -> typing  (( x ~ (ty_poly_rho (ty_rho_tau tau)) )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho rho) )  ->
-     typing G  ( (exp_abs t) )  (ty_poly_rho  ( (ty_rho_func (ty_poly_rho (ty_rho_tau tau)) (ty_poly_rho rho)) ) )
- | typ_annot_abs : forall (L:vars) (G:ctx) (tau:ty_mono) (t:tm) (rho:ty_rho),
-      ftv_mono_ty_poly (ty_poly_rho (ty_rho_tau tau)) [=]{}  ->
-      ( forall x , x \notin  L  -> typing  (( x ~ (ty_poly_rho (ty_rho_tau tau)) )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho rho) )  ->
-     typing G  ( (exp_typed_abs (ty_poly_rho (ty_rho_tau tau)) t) )  (ty_poly_rho  ( (ty_rho_func (ty_poly_rho (ty_rho_tau tau)) (ty_poly_rho rho)) ) )
- | typ_app : forall (G:ctx) (t u:tm) (rho:ty_rho) (tau:ty_mono),
-     typing G t (ty_poly_rho (ty_rho_func (ty_poly_rho (ty_rho_tau tau)) (ty_poly_rho rho))) ->
-     typing G u (ty_poly_rho (ty_rho_tau tau)) ->
-     typing G (exp_app t u) (ty_poly_rho rho)
+     typing G  (exp_lit  i )  sig
+ | typ_abs : forall (L:vars) (G:ctx) (t:tm) (tau1 tau2:ty_mono),
+      ( forall x , x \notin  L  -> typing  (( x ~ (ty_poly_rho (ty_rho_tau tau1)) )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho (ty_rho_tau tau2)) )  ->
+     typing G  ( (exp_abs t) )  (ty_poly_rho  ( (ty_rho_tau (ty_mono_func tau1 tau2)) ) )
+ | typ_app : forall (G:ctx) (t u:tm) (tau2 tau1:ty_mono),
+     typing G t (ty_poly_rho (ty_rho_tau (ty_mono_func tau1 tau2))) ->
+     typing G u (ty_poly_rho (ty_rho_tau tau1)) ->
+     typing G (exp_app t u) (ty_poly_rho (ty_rho_tau tau2))
  | typ_let : forall (L:vars) (G:ctx) (u t:tm) (rho:ty_rho) (sig:ty_poly),
      typing G u sig ->
       ( forall x , x \notin  L  -> typing  (( x ~ sig )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho rho) )  ->
@@ -293,7 +287,6 @@ Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
      typing G t sig ->
      typing G  ( (exp_type_anno t sig) )  sig
  | typ_gen : forall (L:vars) (G:ctx) (t:tm) (rho:ty_rho),
-      a `notin`  ftv_mono_ctx G   ->
       ( forall a , a \notin  L  -> typing G t (ty_poly_rho  ( open_ty_rho_wrt_ty_mono rho (ty_mono_var_f a) ) ) )  ->
      typing G t (ty_poly_poly_gen (ty_poly_rho rho))
  | typ_inst : forall (G:ctx) (t:tm) (tau:ty_mono) (rho:ty_rho),
@@ -307,11 +300,6 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
      lc_tm (exp_let u t) ->
      step u u' ->
      step (exp_let u t) (exp_let u' t)
- | step_let2 : forall (L:vars) (t t' v:tm),
-     Is_true (is_value_of_tm v) ->
-     lc_tm v ->
-      ( forall x , x \notin  L  -> step  ( open_tm_wrt_tm t (exp_var_f x) )   ( open_tm_wrt_tm t' (exp_var_f x) )  )  ->
-     step (exp_let v t) (exp_let v t')
  | step_let : forall (t v:tm),
      Is_true (is_value_of_tm v) ->
      lc_tm (exp_let v t) ->
@@ -348,6 +336,6 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
 
 
 (** infrastructure *)
-Hint Constructors typing step lc_ty_mono lc_ty_poly lc_ty_rho lc_tm : core.
+Hint Constructors typing step lc_ty_mono lc_ty_rho lc_ty_poly lc_tm : core.
 
 

@@ -1,0 +1,84 @@
+DIGEST cee26f0c4d1642dc7bf8db281170e3b6
+FExp_inf
+R15:30 Coq.Arith.Wf_nat <> <> lib
+R48:81 Coq.Logic.FunctionalExtensionality <> <> lib
+R99:118 Coq.Program.Equality <> <> lib
+R137:154 Metalib.Metatheory <> <> lib
+R172:187 Metalib.LibLNgen <> <> lib
+R206:212 Exp_ott <> <> lib
+def 552:563 <> ty_mono_ind'
+R582:588 Exp_ott <> ty_mono ind
+def 618:631 <> ty_mono_mutind
+R638:649 Exp_inf <> ty_mono_ind' scheme
+def 660:671 <> ty_mono_rec'
+R690:696 Exp_ott <> ty_mono ind
+def 725:738 <> ty_mono_mutrec
+R745:756 Exp_inf <> ty_mono_rec' scheme
+def 767:777 <> ty_rho_ind'
+R796:801 Exp_ott <> ty_rho ind
+def 831:843 <> ty_rho_mutind
+R850:860 Exp_inf <> ty_rho_ind' scheme
+def 871:881 <> ty_rho_rec'
+R900:905 Exp_ott <> ty_rho ind
+def 934:946 <> ty_rho_mutrec
+R953:963 Exp_inf <> ty_rho_rec' scheme
+def 974:985 <> ty_poly_ind'
+R1004:1010 Exp_ott <> ty_poly ind
+def 1040:1053 <> ty_poly_mutind
+R1060:1071 Exp_inf <> ty_poly_ind' scheme
+def 1082:1093 <> ty_poly_rec'
+R1112:1118 Exp_ott <> ty_poly ind
+def 1147:1160 <> ty_poly_mutrec
+R1167:1178 Exp_inf <> ty_poly_rec' scheme
+def 1189:1195 <> tm_ind'
+R1214:1215 Exp_ott <> tm ind
+def 1245:1253 <> tm_mutind
+R1260:1266 Exp_inf <> tm_ind' scheme
+def 1277:1283 <> tm_rec'
+R1302:1303 Exp_ott <> tm ind
+def 1332:1340 <> tm_mutrec
+R1347:1353 Exp_inf <> tm_rec' scheme
+def 1460:1471 <> size_ty_mono
+R1481:1487 Exp_ott <> ty_mono ind
+binder 1474:1477 <> tau1:1
+R1506:1508 Coq.Init.Datatypes <> nat ind
+R1521:1524 Exp_inf <> tau1:1 var
+R1537:1548 Exp_ott <> ty_mono_base constr
+R1561:1573 Exp_ott <> ty_mono_var_f constr
+R1589:1601 Exp_ott <> ty_mono_var_b constr
+R1617:1628 Exp_ott <> ty_mono_func constr
+R1666:1669 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1687:1687 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1644:1647 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1665:1665 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1648:1659 Exp_inf <> size_ty_mono:2 def
+R1670:1681 Exp_inf <> size_ty_mono:2 def
+def 1706:1716 <> size_ty_rho
+R1726:1731 Exp_ott <> ty_rho ind
+binder 1719:1722 <> rho1:4
+R1750:1752 Coq.Init.Datatypes <> nat ind
+R1765:1768 Exp_inf <> rho1:4 var
+R1781:1790 Exp_ott <> ty_rho_tau constr
+R1801:1804 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1822:1822 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1805:1816 Exp_inf <> size_ty_mono def
+def 1841:1852 <> size_ty_poly
+R1862:1868 Exp_ott <> ty_poly ind
+binder 1855:1858 <> sig1:7
+R1887:1889 Coq.Init.Datatypes <> nat ind
+R1902:1905 Exp_inf <> sig1:7 var
+R1918:1928 Exp_ott <> ty_poly_rho constr
+R1939:1942 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1959:1959 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1943:1953 Exp_inf <> size_ty_rho def
+R1967:1982 Exp_ott <> ty_poly_poly_gen constr
+R1984:1987 Coq.Init.Specif <> sig2 ind
+R1993:1996 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R2014:2014 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R1997:2008 Exp_inf <> size_ty_poly:8 def
+def 2033:2039 <> size_tm
+R2047:2048 Exp_ott <> tm ind
+binder 2042:2043 <> t1:10
+R2065:2067 Coq.Init.Datatypes <> nat ind
+R2080:2081 Exp_inf <> t1:10 var
+R2094:2100 Exp_ott <> exp_lit constr

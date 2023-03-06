@@ -5,6 +5,8 @@ Require Import Coq.Program.Equality.
 Require Export Metalib.Metatheory.
 Require Export Metalib.LibLNgen.
 
+Require Export Exp_ott.
+
 Local Set Warnings "-non-recursive". 
 
 (** NOTE: Auxiliary theorems are hidden in generated documentation.
@@ -23,23 +25,21 @@ Scheme ty_mono_rec' := Induction for ty_mono Sort Set.
 
 Combined Scheme ty_mono_mutrec from ty_mono_rec'.
 
-Scheme ty_poly_ind' := Induction for ty_poly Sort Prop
-  with ty_rho_ind' := Induction for ty_rho Sort Prop.
+Scheme ty_rho_ind' := Induction for ty_rho Sort Prop.
 
-Combined Scheme ty_poly_ty_rho_mutind from ty_poly_ind',ty_rho_ind'.
+Combined Scheme ty_rho_mutind from ty_rho_ind'.
 
-Scheme ty_poly_rec' := Induction for ty_poly Sort Set
-  with ty_rho_rec' := Induction for ty_rho Sort Set.
+Scheme ty_rho_rec' := Induction for ty_rho Sort Set.
 
-Combined Scheme ty_poly_ty_rho_mutrec from ty_poly_rec',ty_rho_rec'.
+Combined Scheme ty_rho_mutrec from ty_rho_rec'.
 
-Scheme ctx_ind' := Induction for ctx Sort Prop.
+Scheme ty_poly_ind' := Induction for ty_poly Sort Prop.
 
-Combined Scheme ctx_mutind from ctx_ind'.
+Combined Scheme ty_poly_mutind from ty_poly_ind'.
 
-Scheme ctx_rec' := Induction for ctx Sort Set.
+Scheme ty_poly_rec' := Induction for ty_poly Sort Set.
 
-Combined Scheme ctx_mutrec from ctx_rec'.
+Combined Scheme ty_poly_mutrec from ty_poly_rec'.
 
 Scheme tm_ind' := Induction for tm Sort Prop.
 
@@ -61,22 +61,15 @@ Fixpoint size_ty_mono (tau1 : ty_mono) {struct tau1} : nat :=
     | ty_mono_func tau2 tau3 => 1 + (size_ty_mono tau2) + (size_ty_mono tau3)
   end.
 
+Fixpoint size_ty_rho (rho1 : ty_rho) {struct rho1} : nat :=
+  match rho1 with
+    | ty_rho_tau tau1 => 1 + (size_ty_mono tau1)
+  end.
+
 Fixpoint size_ty_poly (sig1 : ty_poly) {struct sig1} : nat :=
   match sig1 with
     | ty_poly_rho rho1 => 1 + (size_ty_rho rho1)
     | ty_poly_poly_gen sig2 => 1 + (size_ty_poly sig2)
-  end
-
-with size_ty_rho (rho1 : ty_rho) {struct rho1} : nat :=
-  match rho1 with
-    | ty_rho_tau tau1 => 1 + (size_ty_mono tau1)
-    | ty_rho_func sig1 sig2 => 1 + (size_ty_poly sig1) + (size_ty_poly sig2)
-  end.
-
-Fixpoint size_ctx (G1 : ctx) {struct G1} : nat :=
-  match G1 with
-    | Empty => 1
-    | Cons G2 x1 sig1 => 1 + (size_ctx G2) + (size_ty_poly sig1)
   end.
 
 Fixpoint size_tm (t1 : tm) {struct t1} : nat :=
@@ -116,45 +109,30 @@ Combined Scheme degree_ty_mono_wrt_ty_mono_mutind from degree_ty_mono_wrt_ty_mon
 
 #[export] Hint Constructors degree_ty_mono_wrt_ty_mono : core lngen.
 
+Inductive degree_ty_rho_wrt_ty_mono : nat -> ty_rho -> Prop :=
+  | degree_wrt_ty_mono_ty_rho_tau : forall n1 tau1,
+    degree_ty_mono_wrt_ty_mono n1 tau1 ->
+    degree_ty_rho_wrt_ty_mono n1 (ty_rho_tau tau1).
+
+Scheme degree_ty_rho_wrt_ty_mono_ind' := Induction for degree_ty_rho_wrt_ty_mono Sort Prop.
+
+Combined Scheme degree_ty_rho_wrt_ty_mono_mutind from degree_ty_rho_wrt_ty_mono_ind'.
+
+#[export] Hint Constructors degree_ty_rho_wrt_ty_mono : core lngen.
+
 Inductive degree_ty_poly_wrt_ty_mono : nat -> ty_poly -> Prop :=
   | degree_wrt_ty_mono_ty_poly_rho : forall n1 rho1,
     degree_ty_rho_wrt_ty_mono n1 rho1 ->
     degree_ty_poly_wrt_ty_mono n1 (ty_poly_rho rho1)
   | degree_wrt_ty_mono_ty_poly_poly_gen : forall n1 sig1,
     degree_ty_poly_wrt_ty_mono (S n1) sig1 ->
-    degree_ty_poly_wrt_ty_mono n1 (ty_poly_poly_gen sig1)
+    degree_ty_poly_wrt_ty_mono n1 (ty_poly_poly_gen sig1).
 
-with degree_ty_rho_wrt_ty_mono : nat -> ty_rho -> Prop :=
-  | degree_wrt_ty_mono_ty_rho_tau : forall n1 tau1,
-    degree_ty_mono_wrt_ty_mono n1 tau1 ->
-    degree_ty_rho_wrt_ty_mono n1 (ty_rho_tau tau1)
-  | degree_wrt_ty_mono_ty_rho_func : forall n1 sig1 sig2,
-    degree_ty_poly_wrt_ty_mono n1 sig1 ->
-    degree_ty_poly_wrt_ty_mono n1 sig2 ->
-    degree_ty_rho_wrt_ty_mono n1 (ty_rho_func sig1 sig2).
+Scheme degree_ty_poly_wrt_ty_mono_ind' := Induction for degree_ty_poly_wrt_ty_mono Sort Prop.
 
-Scheme degree_ty_poly_wrt_ty_mono_ind' := Induction for degree_ty_poly_wrt_ty_mono Sort Prop
-  with degree_ty_rho_wrt_ty_mono_ind' := Induction for degree_ty_rho_wrt_ty_mono Sort Prop.
-
-Combined Scheme degree_ty_poly_wrt_ty_mono_degree_ty_rho_wrt_ty_mono_mutind from degree_ty_poly_wrt_ty_mono_ind',degree_ty_rho_wrt_ty_mono_ind'.
+Combined Scheme degree_ty_poly_wrt_ty_mono_mutind from degree_ty_poly_wrt_ty_mono_ind'.
 
 #[export] Hint Constructors degree_ty_poly_wrt_ty_mono : core lngen.
-
-#[export] Hint Constructors degree_ty_rho_wrt_ty_mono : core lngen.
-
-Inductive degree_ctx_wrt_ty_mono : nat -> ctx -> Prop :=
-  | degree_wrt_ty_mono_Empty : forall n1,
-    degree_ctx_wrt_ty_mono n1 (Empty)
-  | degree_wrt_ty_mono_Cons : forall n1 G1 x1 sig1,
-    degree_ctx_wrt_ty_mono n1 G1 ->
-    degree_ty_poly_wrt_ty_mono n1 sig1 ->
-    degree_ctx_wrt_ty_mono n1 (Cons G1 x1 sig1).
-
-Scheme degree_ctx_wrt_ty_mono_ind' := Induction for degree_ctx_wrt_ty_mono Sort Prop.
-
-Combined Scheme degree_ctx_wrt_ty_mono_mutind from degree_ctx_wrt_ty_mono_ind'.
-
-#[export] Hint Constructors degree_ctx_wrt_ty_mono : core lngen.
 
 Inductive degree_tm_wrt_tm : nat -> tm -> Prop :=
   | degree_wrt_tm_exp_lit : forall n1,
@@ -251,69 +229,50 @@ Combined Scheme lc_set_ty_mono_mutrec from lc_set_ty_mono_rec'.
 
 #[export] Hint Constructors lc_set_ty_mono : core lngen.
 
+Inductive lc_set_ty_rho : ty_rho -> Set :=
+  | lc_set_ty_rho_tau : forall tau1,
+    lc_set_ty_mono tau1 ->
+    lc_set_ty_rho (ty_rho_tau tau1).
+
+Scheme lc_ty_rho_ind' := Induction for lc_ty_rho Sort Prop.
+
+Combined Scheme lc_ty_rho_mutind from lc_ty_rho_ind'.
+
+Scheme lc_set_ty_rho_ind' := Induction for lc_set_ty_rho Sort Prop.
+
+Combined Scheme lc_set_ty_rho_mutind from lc_set_ty_rho_ind'.
+
+Scheme lc_set_ty_rho_rec' := Induction for lc_set_ty_rho Sort Set.
+
+Combined Scheme lc_set_ty_rho_mutrec from lc_set_ty_rho_rec'.
+
+#[export] Hint Constructors lc_ty_rho : core lngen.
+
+#[export] Hint Constructors lc_set_ty_rho : core lngen.
+
 Inductive lc_set_ty_poly : ty_poly -> Set :=
   | lc_set_ty_poly_rho : forall rho1,
     lc_set_ty_rho rho1 ->
     lc_set_ty_poly (ty_poly_rho rho1)
   | lc_set_ty_poly_poly_gen : forall sig1,
     (forall a1 : tyvar, lc_set_ty_poly (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1))) ->
-    lc_set_ty_poly (ty_poly_poly_gen sig1)
+    lc_set_ty_poly (ty_poly_poly_gen sig1).
 
-with lc_set_ty_rho : ty_rho -> Set :=
-  | lc_set_ty_rho_tau : forall tau1,
-    lc_set_ty_mono tau1 ->
-    lc_set_ty_rho (ty_rho_tau tau1)
-  | lc_set_ty_rho_func : forall sig1 sig2,
-    lc_set_ty_poly sig1 ->
-    lc_set_ty_poly sig2 ->
-    lc_set_ty_rho (ty_rho_func sig1 sig2).
+Scheme lc_ty_poly_ind' := Induction for lc_ty_poly Sort Prop.
 
-Scheme lc_ty_poly_ind' := Induction for lc_ty_poly Sort Prop
-  with lc_ty_rho_ind' := Induction for lc_ty_rho Sort Prop.
+Combined Scheme lc_ty_poly_mutind from lc_ty_poly_ind'.
 
-Combined Scheme lc_ty_poly_lc_ty_rho_mutind from lc_ty_poly_ind',lc_ty_rho_ind'.
+Scheme lc_set_ty_poly_ind' := Induction for lc_set_ty_poly Sort Prop.
 
-Scheme lc_set_ty_poly_ind' := Induction for lc_set_ty_poly Sort Prop
-  with lc_set_ty_rho_ind' := Induction for lc_set_ty_rho Sort Prop.
+Combined Scheme lc_set_ty_poly_mutind from lc_set_ty_poly_ind'.
 
-Combined Scheme lc_set_ty_poly_lc_set_ty_rho_mutind from lc_set_ty_poly_ind',lc_set_ty_rho_ind'.
+Scheme lc_set_ty_poly_rec' := Induction for lc_set_ty_poly Sort Set.
 
-Scheme lc_set_ty_poly_rec' := Induction for lc_set_ty_poly Sort Set
-  with lc_set_ty_rho_rec' := Induction for lc_set_ty_rho Sort Set.
-
-Combined Scheme lc_set_ty_poly_lc_set_ty_rho_mutrec from lc_set_ty_poly_rec',lc_set_ty_rho_rec'.
+Combined Scheme lc_set_ty_poly_mutrec from lc_set_ty_poly_rec'.
 
 #[export] Hint Constructors lc_ty_poly : core lngen.
 
-#[export] Hint Constructors lc_ty_rho : core lngen.
-
 #[export] Hint Constructors lc_set_ty_poly : core lngen.
-
-#[export] Hint Constructors lc_set_ty_rho : core lngen.
-
-Inductive lc_set_ctx : ctx -> Set :=
-  | lc_set_Empty :
-    lc_set_ctx (Empty)
-  | lc_set_Cons : forall G1 x1 sig1,
-    lc_set_ctx G1 ->
-    lc_set_ty_poly sig1 ->
-    lc_set_ctx (Cons G1 x1 sig1).
-
-Scheme lc_ctx_ind' := Induction for lc_ctx Sort Prop.
-
-Combined Scheme lc_ctx_mutind from lc_ctx_ind'.
-
-Scheme lc_set_ctx_ind' := Induction for lc_set_ctx Sort Prop.
-
-Combined Scheme lc_set_ctx_mutind from lc_set_ctx_ind'.
-
-Scheme lc_set_ctx_rec' := Induction for lc_set_ctx Sort Set.
-
-Combined Scheme lc_set_ctx_mutrec from lc_set_ctx_rec'.
-
-#[export] Hint Constructors lc_ctx : core lngen.
-
-#[export] Hint Constructors lc_set_ctx : core lngen.
 
 Inductive lc_set_tm : tm -> Set :=
   | lc_set_exp_lit :
@@ -364,17 +323,13 @@ Definition body_ty_mono_wrt_ty_mono tau1 := forall a1, lc_ty_mono (open_ty_mono_
 
 #[export] Hint Unfold body_ty_mono_wrt_ty_mono : core.
 
-Definition body_ty_poly_wrt_ty_mono sig1 := forall a1, lc_ty_poly (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)).
-
 Definition body_ty_rho_wrt_ty_mono rho1 := forall a1, lc_ty_rho (open_ty_rho_wrt_ty_mono rho1 (ty_mono_var_f a1)).
-
-#[export] Hint Unfold body_ty_poly_wrt_ty_mono : core.
 
 #[export] Hint Unfold body_ty_rho_wrt_ty_mono : core.
 
-Definition body_ctx_wrt_ty_mono G1 := forall a1, lc_ctx (open_ctx_wrt_ty_mono G1 (ty_mono_var_f a1)).
+Definition body_ty_poly_wrt_ty_mono sig1 := forall a1, lc_ty_poly (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)).
 
-#[export] Hint Unfold body_ctx_wrt_ty_mono : core.
+#[export] Hint Unfold body_ty_poly_wrt_ty_mono : core.
 
 Definition body_tm_wrt_tm t1 := forall x1, lc_tm (open_tm_wrt_tm t1 (exp_var_f x1)).
 
@@ -429,11 +384,29 @@ Qed.
 
 (* begin hide *)
 
-Lemma size_ty_poly_min_size_ty_rho_min_mutual :
-(forall sig1, 1 <= size_ty_poly sig1) /\
+Lemma size_ty_rho_min_mutual :
 (forall rho1, 1 <= size_ty_rho rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma size_ty_rho_min :
+forall rho1, 1 <= size_ty_rho rho1.
+Proof.
+pose proof size_ty_rho_min_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_ty_rho_min : lngen.
+
+(* begin hide *)
+
+Lemma size_ty_poly_min_mutual :
+(forall sig1, 1 <= size_ty_poly sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -442,37 +415,10 @@ Qed.
 Lemma size_ty_poly_min :
 forall sig1, 1 <= size_ty_poly sig1.
 Proof.
-pose proof size_ty_poly_min_size_ty_rho_min_mutual as H; intuition eauto.
+pose proof size_ty_poly_min_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_ty_poly_min : lngen.
-
-Lemma size_ty_rho_min :
-forall rho1, 1 <= size_ty_rho rho1.
-Proof.
-pose proof size_ty_poly_min_size_ty_rho_min_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ty_rho_min : lngen.
-
-(* begin hide *)
-
-Lemma size_ctx_min_mutual :
-(forall G1, 1 <= size_ctx G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma size_ctx_min :
-forall G1, 1 <= size_ctx G1.
-Proof.
-pose proof size_ctx_min_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ctx_min : lngen.
 
 (* begin hide *)
 
@@ -521,13 +467,37 @@ Qed.
 
 (* begin hide *)
 
-Lemma size_ty_poly_close_ty_poly_wrt_ty_mono_rec_size_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 a1 n1,
-  size_ty_poly (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) = size_ty_poly sig1) /\
+Lemma size_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 a1 n1,
   size_ty_rho (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) = size_ty_rho rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_ty_rho_close_ty_rho_wrt_ty_mono_rec :
+forall rho1 a1 n1,
+  size_ty_rho (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) = size_ty_rho rho1.
+Proof.
+pose proof size_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_ty_rho_close_ty_rho_wrt_ty_mono_rec : lngen.
+#[export] Hint Rewrite size_ty_rho_close_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_ty_poly_close_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 a1 n1,
+  size_ty_poly (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) = size_ty_poly sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -539,51 +509,11 @@ Lemma size_ty_poly_close_ty_poly_wrt_ty_mono_rec :
 forall sig1 a1 n1,
   size_ty_poly (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) = size_ty_poly sig1.
 Proof.
-pose proof size_ty_poly_close_ty_poly_wrt_ty_mono_rec_size_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof size_ty_poly_close_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_ty_poly_close_ty_poly_wrt_ty_mono_rec : lngen.
 #[export] Hint Rewrite size_ty_poly_close_ty_poly_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ty_rho_close_ty_rho_wrt_ty_mono_rec :
-forall rho1 a1 n1,
-  size_ty_rho (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) = size_ty_rho rho1.
-Proof.
-pose proof size_ty_poly_close_ty_poly_wrt_ty_mono_rec_size_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ty_rho_close_ty_rho_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite size_ty_rho_close_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ctx_close_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 a1 n1,
-  size_ctx (close_ctx_wrt_ty_mono_rec n1 a1 G1) = size_ctx G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ctx_close_ctx_wrt_ty_mono_rec :
-forall G1 a1 n1,
-  size_ctx (close_ctx_wrt_ty_mono_rec n1 a1 G1) = size_ctx G1.
-Proof.
-pose proof size_ctx_close_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ctx_close_ctx_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite size_ctx_close_ctx_wrt_ty_mono_rec using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -649,16 +579,6 @@ Qed.
 #[export] Hint Resolve size_ty_mono_close_ty_mono_wrt_ty_mono : lngen.
 #[export] Hint Rewrite size_ty_mono_close_ty_mono_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma size_ty_poly_close_ty_poly_wrt_ty_mono :
-forall sig1 a1,
-  size_ty_poly (close_ty_poly_wrt_ty_mono a1 sig1) = size_ty_poly sig1.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve size_ty_poly_close_ty_poly_wrt_ty_mono : lngen.
-#[export] Hint Rewrite size_ty_poly_close_ty_poly_wrt_ty_mono using solve [auto] : lngen.
-
 Lemma size_ty_rho_close_ty_rho_wrt_ty_mono :
 forall rho1 a1,
   size_ty_rho (close_ty_rho_wrt_ty_mono a1 rho1) = size_ty_rho rho1.
@@ -669,15 +589,15 @@ Qed.
 #[export] Hint Resolve size_ty_rho_close_ty_rho_wrt_ty_mono : lngen.
 #[export] Hint Rewrite size_ty_rho_close_ty_rho_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma size_ctx_close_ctx_wrt_ty_mono :
-forall G1 a1,
-  size_ctx (close_ctx_wrt_ty_mono a1 G1) = size_ctx G1.
+Lemma size_ty_poly_close_ty_poly_wrt_ty_mono :
+forall sig1 a1,
+  size_ty_poly (close_ty_poly_wrt_ty_mono a1 sig1) = size_ty_poly sig1.
 Proof.
-unfold close_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve size_ctx_close_ctx_wrt_ty_mono : lngen.
-#[export] Hint Rewrite size_ctx_close_ctx_wrt_ty_mono using solve [auto] : lngen.
+#[export] Hint Resolve size_ty_poly_close_ty_poly_wrt_ty_mono : lngen.
+#[export] Hint Rewrite size_ty_poly_close_ty_poly_wrt_ty_mono using solve [auto] : lngen.
 
 Lemma size_tm_close_tm_wrt_tm :
 forall t1 x1,
@@ -726,13 +646,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_rec_size_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 tau1 n1,
-  size_ty_poly sig1 <= size_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1)) /\
+Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 tau1 n1,
   size_ty_rho rho1 <= size_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_rec :
+forall rho1 tau1 n1,
+  size_ty_rho rho1 <= size_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1).
+Proof.
+pose proof size_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_ty_rho_open_ty_rho_wrt_ty_mono_rec : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 tau1 n1,
+  size_ty_poly sig1 <= size_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -744,48 +687,10 @@ Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_rec :
 forall sig1 tau1 n1,
   size_ty_poly sig1 <= size_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1).
 Proof.
-pose proof size_ty_poly_open_ty_poly_wrt_ty_mono_rec_size_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof size_ty_poly_open_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_ty_poly_open_ty_poly_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_rec :
-forall rho1 tau1 n1,
-  size_ty_rho rho1 <= size_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1).
-Proof.
-pose proof size_ty_poly_open_ty_poly_wrt_ty_mono_rec_size_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ty_rho_open_ty_rho_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ctx_open_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 tau1 n1,
-  size_ctx G1 <= size_ctx (open_ctx_wrt_ty_mono_rec n1 tau1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ctx_open_ctx_wrt_ty_mono_rec :
-forall G1 tau1 n1,
-  size_ctx G1 <= size_ctx (open_ctx_wrt_ty_mono_rec n1 tau1 G1).
-Proof.
-pose proof size_ctx_open_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ctx_open_ctx_wrt_ty_mono_rec : lngen.
 
 (* end hide *)
 
@@ -848,15 +753,6 @@ Qed.
 
 #[export] Hint Resolve size_ty_mono_open_ty_mono_wrt_ty_mono : lngen.
 
-Lemma size_ty_poly_open_ty_poly_wrt_ty_mono :
-forall sig1 tau1,
-  size_ty_poly sig1 <= size_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1).
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve size_ty_poly_open_ty_poly_wrt_ty_mono : lngen.
-
 Lemma size_ty_rho_open_ty_rho_wrt_ty_mono :
 forall rho1 tau1,
   size_ty_rho rho1 <= size_ty_rho (open_ty_rho_wrt_ty_mono rho1 tau1).
@@ -866,14 +762,14 @@ Qed.
 
 #[export] Hint Resolve size_ty_rho_open_ty_rho_wrt_ty_mono : lngen.
 
-Lemma size_ctx_open_ctx_wrt_ty_mono :
-forall G1 tau1,
-  size_ctx G1 <= size_ctx (open_ctx_wrt_ty_mono G1 tau1).
+Lemma size_ty_poly_open_ty_poly_wrt_ty_mono :
+forall sig1 tau1,
+  size_ty_poly sig1 <= size_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1).
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve size_ctx_open_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve size_ty_poly_open_ty_poly_wrt_ty_mono : lngen.
 
 Lemma size_tm_open_tm_wrt_tm :
 forall t1 t2,
@@ -921,13 +817,37 @@ Qed.
 
 (* begin hide *)
 
-Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var_size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var_mutual :
-(forall sig1 a1 n1,
-  size_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1) = size_ty_poly sig1) /\
+Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var_mutual :
 (forall rho1 a1 n1,
   size_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1) = size_ty_rho rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var :
+forall rho1 a1 n1,
+  size_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1) = size_ty_rho rho1.
+Proof.
+pose proof size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var : lngen.
+#[export] Hint Rewrite size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var_mutual :
+(forall sig1 a1 n1,
+  size_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1) = size_ty_poly sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -939,51 +859,11 @@ Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var :
 forall sig1 a1 n1,
   size_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1) = size_ty_poly sig1.
 Proof.
-pose proof size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var_size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var_mutual as H; intuition eauto.
+pose proof size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var : lngen.
 #[export] Hint Rewrite size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var :
-forall rho1 a1 n1,
-  size_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1) = size_ty_rho rho1.
-Proof.
-pose proof size_ty_poly_open_ty_poly_wrt_ty_mono_rec_var_size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var : lngen.
-#[export] Hint Rewrite size_ty_rho_open_ty_rho_wrt_ty_mono_rec_var using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ctx_open_ctx_wrt_ty_mono_rec_var_mutual :
-(forall G1 a1 n1,
-  size_ctx (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1) = size_ctx G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma size_ctx_open_ctx_wrt_ty_mono_rec_var :
-forall G1 a1 n1,
-  size_ctx (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1) = size_ctx G1.
-Proof.
-pose proof size_ctx_open_ctx_wrt_ty_mono_rec_var_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_ctx_open_ctx_wrt_ty_mono_rec_var : lngen.
-#[export] Hint Rewrite size_ctx_open_ctx_wrt_ty_mono_rec_var using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -1049,16 +929,6 @@ Qed.
 #[export] Hint Resolve size_ty_mono_open_ty_mono_wrt_ty_mono_var : lngen.
 #[export] Hint Rewrite size_ty_mono_open_ty_mono_wrt_ty_mono_var using solve [auto] : lngen.
 
-Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_var :
-forall sig1 a1,
-  size_ty_poly (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)) = size_ty_poly sig1.
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve size_ty_poly_open_ty_poly_wrt_ty_mono_var : lngen.
-#[export] Hint Rewrite size_ty_poly_open_ty_poly_wrt_ty_mono_var using solve [auto] : lngen.
-
 Lemma size_ty_rho_open_ty_rho_wrt_ty_mono_var :
 forall rho1 a1,
   size_ty_rho (open_ty_rho_wrt_ty_mono rho1 (ty_mono_var_f a1)) = size_ty_rho rho1.
@@ -1069,15 +939,15 @@ Qed.
 #[export] Hint Resolve size_ty_rho_open_ty_rho_wrt_ty_mono_var : lngen.
 #[export] Hint Rewrite size_ty_rho_open_ty_rho_wrt_ty_mono_var using solve [auto] : lngen.
 
-Lemma size_ctx_open_ctx_wrt_ty_mono_var :
-forall G1 a1,
-  size_ctx (open_ctx_wrt_ty_mono G1 (ty_mono_var_f a1)) = size_ctx G1.
+Lemma size_ty_poly_open_ty_poly_wrt_ty_mono_var :
+forall sig1 a1,
+  size_ty_poly (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)) = size_ty_poly sig1.
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve size_ctx_open_ctx_wrt_ty_mono_var : lngen.
-#[export] Hint Rewrite size_ctx_open_ctx_wrt_ty_mono_var using solve [auto] : lngen.
+#[export] Hint Resolve size_ty_poly_open_ty_poly_wrt_ty_mono_var : lngen.
+#[export] Hint Rewrite size_ty_poly_open_ty_poly_wrt_ty_mono_var using solve [auto] : lngen.
 
 Lemma size_tm_open_tm_wrt_tm_var :
 forall t1 x1,
@@ -1131,15 +1001,35 @@ Qed.
 
 (* begin hide *)
 
-Lemma degree_ty_poly_wrt_ty_mono_S_degree_ty_rho_wrt_ty_mono_S_mutual :
-(forall n1 sig1,
-  degree_ty_poly_wrt_ty_mono n1 sig1 ->
-  degree_ty_poly_wrt_ty_mono (S n1) sig1) /\
+Lemma degree_ty_rho_wrt_ty_mono_S_mutual :
 (forall n1 rho1,
   degree_ty_rho_wrt_ty_mono n1 rho1 ->
   degree_ty_rho_wrt_ty_mono (S n1) rho1).
 Proof.
-apply_mutual_ind degree_ty_poly_wrt_ty_mono_degree_ty_rho_wrt_ty_mono_mutind;
+apply_mutual_ind degree_ty_rho_wrt_ty_mono_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma degree_ty_rho_wrt_ty_mono_S :
+forall n1 rho1,
+  degree_ty_rho_wrt_ty_mono n1 rho1 ->
+  degree_ty_rho_wrt_ty_mono (S n1) rho1.
+Proof.
+pose proof degree_ty_rho_wrt_ty_mono_S_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_S : lngen.
+
+(* begin hide *)
+
+Lemma degree_ty_poly_wrt_ty_mono_S_mutual :
+(forall n1 sig1,
+  degree_ty_poly_wrt_ty_mono n1 sig1 ->
+  degree_ty_poly_wrt_ty_mono (S n1) sig1).
+Proof.
+apply_mutual_ind degree_ty_poly_wrt_ty_mono_mutind;
 default_simp.
 Qed.
 
@@ -1150,43 +1040,10 @@ forall n1 sig1,
   degree_ty_poly_wrt_ty_mono n1 sig1 ->
   degree_ty_poly_wrt_ty_mono (S n1) sig1.
 Proof.
-pose proof degree_ty_poly_wrt_ty_mono_S_degree_ty_rho_wrt_ty_mono_S_mutual as H; intuition eauto.
+pose proof degree_ty_poly_wrt_ty_mono_S_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve degree_ty_poly_wrt_ty_mono_S : lngen.
-
-Lemma degree_ty_rho_wrt_ty_mono_S :
-forall n1 rho1,
-  degree_ty_rho_wrt_ty_mono n1 rho1 ->
-  degree_ty_rho_wrt_ty_mono (S n1) rho1.
-Proof.
-pose proof degree_ty_poly_wrt_ty_mono_S_degree_ty_rho_wrt_ty_mono_S_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_S : lngen.
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_S_mutual :
-(forall n1 G1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  degree_ctx_wrt_ty_mono (S n1) G1).
-Proof.
-apply_mutual_ind degree_ctx_wrt_ty_mono_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma degree_ctx_wrt_ty_mono_S :
-forall n1 G1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  degree_ctx_wrt_ty_mono (S n1) G1.
-Proof.
-pose proof degree_ctx_wrt_ty_mono_S_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_S : lngen.
 
 (* begin hide *)
 
@@ -1244,16 +1101,6 @@ Qed.
 
 #[export] Hint Resolve degree_ty_mono_wrt_ty_mono_O : lngen.
 
-Lemma degree_ty_poly_wrt_ty_mono_O :
-forall n1 sig1,
-  degree_ty_poly_wrt_ty_mono O sig1 ->
-  degree_ty_poly_wrt_ty_mono n1 sig1.
-Proof.
-induction n1; default_simp.
-Qed.
-
-#[export] Hint Resolve degree_ty_poly_wrt_ty_mono_O : lngen.
-
 Lemma degree_ty_rho_wrt_ty_mono_O :
 forall n1 rho1,
   degree_ty_rho_wrt_ty_mono O rho1 ->
@@ -1264,15 +1111,15 @@ Qed.
 
 #[export] Hint Resolve degree_ty_rho_wrt_ty_mono_O : lngen.
 
-Lemma degree_ctx_wrt_ty_mono_O :
-forall n1 G1,
-  degree_ctx_wrt_ty_mono O G1 ->
-  degree_ctx_wrt_ty_mono n1 G1.
+Lemma degree_ty_poly_wrt_ty_mono_O :
+forall n1 sig1,
+  degree_ty_poly_wrt_ty_mono O sig1 ->
+  degree_ty_poly_wrt_ty_mono n1 sig1.
 Proof.
 induction n1; default_simp.
 Qed.
 
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_O : lngen.
+#[export] Hint Resolve degree_ty_poly_wrt_ty_mono_O : lngen.
 
 Lemma degree_tm_wrt_tm_O :
 forall n1 t1,
@@ -1323,15 +1170,39 @@ Qed.
 
 (* begin hide *)
 
-Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 a1 n1,
-  degree_ty_poly_wrt_ty_mono n1 sig1 ->
-  degree_ty_poly_wrt_ty_mono (S n1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1)) /\
+Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 a1 n1,
   degree_ty_rho_wrt_ty_mono n1 rho1 ->
   degree_ty_rho_wrt_ty_mono (S n1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec :
+forall rho1 a1 n1,
+  degree_ty_rho_wrt_ty_mono n1 rho1 ->
+  degree_ty_rho_wrt_ty_mono (S n1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1).
+Proof.
+pose proof degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 a1 n1,
+  degree_ty_poly_wrt_ty_mono n1 sig1 ->
+  degree_ty_poly_wrt_ty_mono (S n1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -1344,51 +1215,10 @@ forall sig1 a1 n1,
   degree_ty_poly_wrt_ty_mono n1 sig1 ->
   degree_ty_poly_wrt_ty_mono (S n1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1).
 Proof.
-pose proof degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec :
-forall rho1 a1 n1,
-  degree_ty_rho_wrt_ty_mono n1 rho1 ->
-  degree_ty_rho_wrt_ty_mono (S n1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1).
-Proof.
-pose proof degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 a1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  degree_ctx_wrt_ty_mono (S n1) (close_ctx_wrt_ty_mono_rec n1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec :
-forall G1 a1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  degree_ctx_wrt_ty_mono (S n1) (close_ctx_wrt_ty_mono_rec n1 a1 G1).
-Proof.
-pose proof degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec : lngen.
 
 (* end hide *)
 
@@ -1510,16 +1340,6 @@ Qed.
 
 #[export] Hint Resolve degree_ty_mono_wrt_ty_mono_close_ty_mono_wrt_ty_mono : lngen.
 
-Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono :
-forall sig1 a1,
-  degree_ty_poly_wrt_ty_mono 0 sig1 ->
-  degree_ty_poly_wrt_ty_mono 1 (close_ty_poly_wrt_ty_mono a1 sig1).
-Proof.
-unfold close_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono : lngen.
-
 Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono :
 forall rho1 a1,
   degree_ty_rho_wrt_ty_mono 0 rho1 ->
@@ -1530,15 +1350,15 @@ Qed.
 
 #[export] Hint Resolve degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono : lngen.
 
-Lemma degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono :
-forall G1 a1,
-  degree_ctx_wrt_ty_mono 0 G1 ->
-  degree_ctx_wrt_ty_mono 1 (close_ctx_wrt_ty_mono a1 G1).
+Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono :
+forall sig1 a1,
+  degree_ty_poly_wrt_ty_mono 0 sig1 ->
+  degree_ty_poly_wrt_ty_mono 1 (close_ty_poly_wrt_ty_mono a1 sig1).
 Proof.
-unfold close_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono : lngen.
 
 Lemma degree_tm_wrt_tm_close_tm_wrt_tm :
 forall t1 x1,
@@ -1609,15 +1429,39 @@ Qed.
 
 (* begin hide *)
 
-Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_inv_degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv_mutual :
-(forall sig1 a1 n1,
-  degree_ty_poly_wrt_ty_mono (S n1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) ->
-  degree_ty_poly_wrt_ty_mono n1 sig1) /\
+Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv_mutual :
 (forall rho1 a1 n1,
   degree_ty_rho_wrt_ty_mono (S n1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) ->
   degree_ty_rho_wrt_ty_mono n1 rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv :
+forall rho1 a1 n1,
+  degree_ty_rho_wrt_ty_mono (S n1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) ->
+  degree_ty_rho_wrt_ty_mono n1 rho1.
+Proof.
+pose proof degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_inv_mutual :
+(forall sig1 a1 n1,
+  degree_ty_poly_wrt_ty_mono (S n1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) ->
+  degree_ty_poly_wrt_ty_mono n1 sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; eauto with lngen.
 Qed.
 
@@ -1630,51 +1474,10 @@ forall sig1 a1 n1,
   degree_ty_poly_wrt_ty_mono (S n1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) ->
   degree_ty_poly_wrt_ty_mono n1 sig1.
 Proof.
-pose proof degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_inv_degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
+pose proof degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Immediate degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_inv : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv :
-forall rho1 a1 n1,
-  degree_ty_rho_wrt_ty_mono (S n1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) ->
-  degree_ty_rho_wrt_ty_mono n1 rho1.
-Proof.
-pose proof degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_rec_inv_degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_inv : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec_inv_mutual :
-(forall G1 a1 n1,
-  degree_ctx_wrt_ty_mono (S n1) (close_ctx_wrt_ty_mono_rec n1 a1 G1) ->
-  degree_ctx_wrt_ty_mono n1 G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; eauto with lngen.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec_inv :
-forall G1 a1 n1,
-  degree_ctx_wrt_ty_mono (S n1) (close_ctx_wrt_ty_mono_rec n1 a1 G1) ->
-  degree_ctx_wrt_ty_mono n1 G1.
-Proof.
-pose proof degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_rec_inv : lngen.
 
 (* end hide *)
 
@@ -1796,16 +1599,6 @@ Qed.
 
 #[export] Hint Immediate degree_ty_mono_wrt_ty_mono_close_ty_mono_wrt_ty_mono_inv : lngen.
 
-Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_inv :
-forall sig1 a1,
-  degree_ty_poly_wrt_ty_mono 1 (close_ty_poly_wrt_ty_mono a1 sig1) ->
-  degree_ty_poly_wrt_ty_mono 0 sig1.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; eauto with lngen.
-Qed.
-
-#[export] Hint Immediate degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_inv : lngen.
-
 Lemma degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_inv :
 forall rho1 a1,
   degree_ty_rho_wrt_ty_mono 1 (close_ty_rho_wrt_ty_mono a1 rho1) ->
@@ -1816,15 +1609,15 @@ Qed.
 
 #[export] Hint Immediate degree_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono_inv : lngen.
 
-Lemma degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_inv :
-forall G1 a1,
-  degree_ctx_wrt_ty_mono 1 (close_ctx_wrt_ty_mono a1 G1) ->
-  degree_ctx_wrt_ty_mono 0 G1.
+Lemma degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_inv :
+forall sig1 a1,
+  degree_ty_poly_wrt_ty_mono 1 (close_ty_poly_wrt_ty_mono a1 sig1) ->
+  degree_ty_poly_wrt_ty_mono 0 sig1.
 Proof.
-unfold close_ctx_wrt_ty_mono; eauto with lngen.
+unfold close_ty_poly_wrt_ty_mono; eauto with lngen.
 Qed.
 
-#[export] Hint Immediate degree_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono_inv : lngen.
+#[export] Hint Immediate degree_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono_inv : lngen.
 
 Lemma degree_tm_wrt_tm_close_tm_wrt_tm_inv :
 forall t1 x1,
@@ -1897,17 +1690,42 @@ Qed.
 
 (* begin hide *)
 
-Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 tau1 n1,
-  degree_ty_poly_wrt_ty_mono (S n1) sig1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ty_poly_wrt_ty_mono n1 (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1)) /\
+Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 tau1 n1,
   degree_ty_rho_wrt_ty_mono (S n1) rho1 ->
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   degree_ty_rho_wrt_ty_mono n1 (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec :
+forall rho1 tau1 n1,
+  degree_ty_rho_wrt_ty_mono (S n1) rho1 ->
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  degree_ty_rho_wrt_ty_mono n1 (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1).
+Proof.
+pose proof degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 tau1 n1,
+  degree_ty_poly_wrt_ty_mono (S n1) sig1 ->
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  degree_ty_poly_wrt_ty_mono n1 (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -1921,54 +1739,10 @@ forall sig1 tau1 n1,
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   degree_ty_poly_wrt_ty_mono n1 (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1).
 Proof.
-pose proof degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec :
-forall rho1 tau1 n1,
-  degree_ty_rho_wrt_ty_mono (S n1) rho1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ty_rho_wrt_ty_mono n1 (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1).
-Proof.
-pose proof degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 tau1 n1,
-  degree_ctx_wrt_ty_mono (S n1) G1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ctx_wrt_ty_mono n1 (open_ctx_wrt_ty_mono_rec n1 tau1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec :
-forall G1 tau1 n1,
-  degree_ctx_wrt_ty_mono (S n1) G1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ctx_wrt_ty_mono n1 (open_ctx_wrt_ty_mono_rec n1 tau1 G1).
-Proof.
-pose proof degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec : lngen.
 
 (* end hide *)
 
@@ -2097,17 +1871,6 @@ Qed.
 
 #[export] Hint Resolve degree_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono : lngen.
 
-Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono :
-forall sig1 tau1,
-  degree_ty_poly_wrt_ty_mono 1 sig1 ->
-  degree_ty_mono_wrt_ty_mono 0 tau1 ->
-  degree_ty_poly_wrt_ty_mono 0 (open_ty_poly_wrt_ty_mono sig1 tau1).
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono : lngen.
-
 Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono :
 forall rho1 tau1,
   degree_ty_rho_wrt_ty_mono 1 rho1 ->
@@ -2119,16 +1882,16 @@ Qed.
 
 #[export] Hint Resolve degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono : lngen.
 
-Lemma degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono :
-forall G1 tau1,
-  degree_ctx_wrt_ty_mono 1 G1 ->
+Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono :
+forall sig1 tau1,
+  degree_ty_poly_wrt_ty_mono 1 sig1 ->
   degree_ty_mono_wrt_ty_mono 0 tau1 ->
-  degree_ctx_wrt_ty_mono 0 (open_ctx_wrt_ty_mono G1 tau1).
+  degree_ty_poly_wrt_ty_mono 0 (open_ty_poly_wrt_ty_mono sig1 tau1).
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono : lngen.
 
 Lemma degree_tm_wrt_tm_open_tm_wrt_tm :
 forall t1 t2,
@@ -2202,15 +1965,39 @@ Qed.
 
 (* begin hide *)
 
-Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_inv_degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv_mutual :
-(forall sig1 tau1 n1,
-  degree_ty_poly_wrt_ty_mono n1 (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1) ->
-  degree_ty_poly_wrt_ty_mono (S n1) sig1) /\
+Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv_mutual :
 (forall rho1 tau1 n1,
   degree_ty_rho_wrt_ty_mono n1 (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1) ->
   degree_ty_rho_wrt_ty_mono (S n1) rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv :
+forall rho1 tau1 n1,
+  degree_ty_rho_wrt_ty_mono n1 (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1) ->
+  degree_ty_rho_wrt_ty_mono (S n1) rho1.
+Proof.
+pose proof degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_inv_mutual :
+(forall sig1 tau1 n1,
+  degree_ty_poly_wrt_ty_mono n1 (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1) ->
+  degree_ty_poly_wrt_ty_mono (S n1) sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; eauto with lngen.
 Qed.
 
@@ -2223,51 +2010,10 @@ forall sig1 tau1 n1,
   degree_ty_poly_wrt_ty_mono n1 (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1) ->
   degree_ty_poly_wrt_ty_mono (S n1) sig1.
 Proof.
-pose proof degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_inv_degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
+pose proof degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Immediate degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_inv : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv :
-forall rho1 tau1 n1,
-  degree_ty_rho_wrt_ty_mono n1 (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1) ->
-  degree_ty_rho_wrt_ty_mono (S n1) rho1.
-Proof.
-pose proof degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_rec_inv_degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_inv : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec_inv_mutual :
-(forall G1 tau1 n1,
-  degree_ctx_wrt_ty_mono n1 (open_ctx_wrt_ty_mono_rec n1 tau1 G1) ->
-  degree_ctx_wrt_ty_mono (S n1) G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; eauto with lngen.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec_inv :
-forall G1 tau1 n1,
-  degree_ctx_wrt_ty_mono n1 (open_ctx_wrt_ty_mono_rec n1 tau1 G1) ->
-  degree_ctx_wrt_ty_mono (S n1) G1.
-Proof.
-pose proof degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec_inv_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_rec_inv : lngen.
 
 (* end hide *)
 
@@ -2389,16 +2135,6 @@ Qed.
 
 #[export] Hint Immediate degree_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono_inv : lngen.
 
-Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_inv :
-forall sig1 tau1,
-  degree_ty_poly_wrt_ty_mono 0 (open_ty_poly_wrt_ty_mono sig1 tau1) ->
-  degree_ty_poly_wrt_ty_mono 1 sig1.
-Proof.
-unfold open_ty_poly_wrt_ty_mono; eauto with lngen.
-Qed.
-
-#[export] Hint Immediate degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_inv : lngen.
-
 Lemma degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_inv :
 forall rho1 tau1,
   degree_ty_rho_wrt_ty_mono 0 (open_ty_rho_wrt_ty_mono rho1 tau1) ->
@@ -2409,15 +2145,15 @@ Qed.
 
 #[export] Hint Immediate degree_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono_inv : lngen.
 
-Lemma degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_inv :
-forall G1 tau1,
-  degree_ctx_wrt_ty_mono 0 (open_ctx_wrt_ty_mono G1 tau1) ->
-  degree_ctx_wrt_ty_mono 1 G1.
+Lemma degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_inv :
+forall sig1 tau1,
+  degree_ty_poly_wrt_ty_mono 0 (open_ty_poly_wrt_ty_mono sig1 tau1) ->
+  degree_ty_poly_wrt_ty_mono 1 sig1.
 Proof.
-unfold open_ctx_wrt_ty_mono; eauto with lngen.
+unfold open_ty_poly_wrt_ty_mono; eauto with lngen.
 Qed.
 
-#[export] Hint Immediate degree_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono_inv : lngen.
+#[export] Hint Immediate degree_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono_inv : lngen.
 
 Lemma degree_tm_wrt_tm_open_tm_wrt_tm_inv :
 forall t1 t2,
@@ -2498,15 +2234,42 @@ Qed.
 
 (* begin hide *)
 
-Lemma close_ty_poly_wrt_ty_mono_rec_inj_close_ty_rho_wrt_ty_mono_rec_inj_mutual :
-(forall sig1 sig2 a1 n1,
-  close_ty_poly_wrt_ty_mono_rec n1 a1 sig1 = close_ty_poly_wrt_ty_mono_rec n1 a1 sig2 ->
-  sig1 = sig2) /\
+Lemma close_ty_rho_wrt_ty_mono_rec_inj_mutual :
 (forall rho1 rho2 a1 n1,
   close_ty_rho_wrt_ty_mono_rec n1 a1 rho1 = close_ty_rho_wrt_ty_mono_rec n1 a1 rho2 ->
   rho1 = rho2).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+intros; match goal with
+          | |- _ = ?term => destruct term
+        end;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_ty_rho_wrt_ty_mono_rec_inj :
+forall rho1 rho2 a1 n1,
+  close_ty_rho_wrt_ty_mono_rec n1 a1 rho1 = close_ty_rho_wrt_ty_mono_rec n1 a1 rho2 ->
+  rho1 = rho2.
+Proof.
+pose proof close_ty_rho_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate close_ty_rho_wrt_ty_mono_rec_inj : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_ty_poly_wrt_ty_mono_rec_inj_mutual :
+(forall sig1 sig2 a1 n1,
+  close_ty_poly_wrt_ty_mono_rec n1 a1 sig1 = close_ty_poly_wrt_ty_mono_rec n1 a1 sig2 ->
+  sig1 = sig2).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 intros; match goal with
           | |- _ = ?term => destruct term
         end;
@@ -2522,54 +2285,10 @@ forall sig1 sig2 a1 n1,
   close_ty_poly_wrt_ty_mono_rec n1 a1 sig1 = close_ty_poly_wrt_ty_mono_rec n1 a1 sig2 ->
   sig1 = sig2.
 Proof.
-pose proof close_ty_poly_wrt_ty_mono_rec_inj_close_ty_rho_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
+pose proof close_ty_poly_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Immediate close_ty_poly_wrt_ty_mono_rec_inj : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ty_rho_wrt_ty_mono_rec_inj :
-forall rho1 rho2 a1 n1,
-  close_ty_rho_wrt_ty_mono_rec n1 a1 rho1 = close_ty_rho_wrt_ty_mono_rec n1 a1 rho2 ->
-  rho1 = rho2.
-Proof.
-pose proof close_ty_poly_wrt_ty_mono_rec_inj_close_ty_rho_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate close_ty_rho_wrt_ty_mono_rec_inj : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ctx_wrt_ty_mono_rec_inj_mutual :
-(forall G1 G2 a1 n1,
-  close_ctx_wrt_ty_mono_rec n1 a1 G1 = close_ctx_wrt_ty_mono_rec n1 a1 G2 ->
-  G1 = G2).
-Proof.
-apply_mutual_ind ctx_mutind;
-intros; match goal with
-          | |- _ = ?term => destruct term
-        end;
-default_simp; eauto with lngen.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ctx_wrt_ty_mono_rec_inj :
-forall G1 G2 a1 n1,
-  close_ctx_wrt_ty_mono_rec n1 a1 G1 = close_ctx_wrt_ty_mono_rec n1 a1 G2 ->
-  G1 = G2.
-Proof.
-pose proof close_ctx_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate close_ctx_wrt_ty_mono_rec_inj : lngen.
 
 (* end hide *)
 
@@ -2643,16 +2362,6 @@ Qed.
 
 #[export] Hint Immediate close_ty_mono_wrt_ty_mono_inj : lngen.
 
-Lemma close_ty_poly_wrt_ty_mono_inj :
-forall sig1 sig2 a1,
-  close_ty_poly_wrt_ty_mono a1 sig1 = close_ty_poly_wrt_ty_mono a1 sig2 ->
-  sig1 = sig2.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; eauto with lngen.
-Qed.
-
-#[export] Hint Immediate close_ty_poly_wrt_ty_mono_inj : lngen.
-
 Lemma close_ty_rho_wrt_ty_mono_inj :
 forall rho1 rho2 a1,
   close_ty_rho_wrt_ty_mono a1 rho1 = close_ty_rho_wrt_ty_mono a1 rho2 ->
@@ -2663,15 +2372,15 @@ Qed.
 
 #[export] Hint Immediate close_ty_rho_wrt_ty_mono_inj : lngen.
 
-Lemma close_ctx_wrt_ty_mono_inj :
-forall G1 G2 a1,
-  close_ctx_wrt_ty_mono a1 G1 = close_ctx_wrt_ty_mono a1 G2 ->
-  G1 = G2.
+Lemma close_ty_poly_wrt_ty_mono_inj :
+forall sig1 sig2 a1,
+  close_ty_poly_wrt_ty_mono a1 sig1 = close_ty_poly_wrt_ty_mono a1 sig2 ->
+  sig1 = sig2.
 Proof.
-unfold close_ctx_wrt_ty_mono; eauto with lngen.
+unfold close_ty_poly_wrt_ty_mono; eauto with lngen.
 Qed.
 
-#[export] Hint Immediate close_ctx_wrt_ty_mono_inj : lngen.
+#[export] Hint Immediate close_ty_poly_wrt_ty_mono_inj : lngen.
 
 Lemma close_tm_wrt_tm_inj :
 forall t1 t2 x1,
@@ -2723,15 +2432,40 @@ Qed.
 
 (* begin hide *)
 
-Lemma close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 a1 n1,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  close_ty_poly_wrt_ty_mono_rec n1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1) = sig1) /\
+Lemma close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 a1 n1,
   a1 `notin` ftv_mono_ty_rho rho1 ->
   close_ty_rho_wrt_ty_mono_rec n1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1) = rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec :
+forall rho1 a1 n1,
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  close_ty_rho_wrt_ty_mono_rec n1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1) = rho1.
+Proof.
+pose proof close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec : lngen.
+#[export] Hint Rewrite close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 a1 n1,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  close_ty_poly_wrt_ty_mono_rec n1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1) = sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -2744,54 +2478,11 @@ forall sig1 a1 n1,
   a1 `notin` ftv_mono_ty_poly sig1 ->
   close_ty_poly_wrt_ty_mono_rec n1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1) = sig1.
 Proof.
-pose proof close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec : lngen.
 #[export] Hint Rewrite close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec :
-forall rho1 a1 n1,
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  close_ty_rho_wrt_ty_mono_rec n1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1) = rho1.
-Proof.
-pose proof close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 a1 n1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  close_ctx_wrt_ty_mono_rec n1 a1 (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1) = G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec :
-forall G1 a1 n1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  close_ctx_wrt_ty_mono_rec n1 a1 (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1) = G1.
-Proof.
-pose proof close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -2862,17 +2553,6 @@ Qed.
 #[export] Hint Resolve close_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono : lngen.
 #[export] Hint Rewrite close_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono :
-forall sig1 a1,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  close_ty_poly_wrt_ty_mono a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)) = sig1.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono : lngen.
-#[export] Hint Rewrite close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono using solve [auto] : lngen.
-
 Lemma close_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono :
 forall rho1 a1,
   a1 `notin` ftv_mono_ty_rho rho1 ->
@@ -2884,16 +2564,16 @@ Qed.
 #[export] Hint Resolve close_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono : lngen.
 #[export] Hint Rewrite close_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma close_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono :
-forall G1 a1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  close_ctx_wrt_ty_mono a1 (open_ctx_wrt_ty_mono G1 (ty_mono_var_f a1)) = G1.
+Lemma close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono :
+forall sig1 a1,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  close_ty_poly_wrt_ty_mono a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)) = sig1.
 Proof.
-unfold close_ctx_wrt_ty_mono; unfold open_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve close_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono : lngen.
-#[export] Hint Rewrite close_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono using solve [auto] : lngen.
+#[export] Hint Resolve close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono : lngen.
+#[export] Hint Rewrite close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono using solve [auto] : lngen.
 
 Lemma close_tm_wrt_tm_open_tm_wrt_tm :
 forall t1 x1,
@@ -2945,13 +2625,37 @@ Qed.
 
 (* begin hide *)
 
-Lemma open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 a1 n1,
-  open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) = sig1) /\
+Lemma open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 a1 n1,
   open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) = rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec :
+forall rho1 a1 n1,
+  open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) = rho1.
+Proof.
+pose proof open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec : lngen.
+#[export] Hint Rewrite open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 a1 n1,
+  open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) = sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -2963,51 +2667,11 @@ Lemma open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec :
 forall sig1 a1 n1,
   open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) = sig1.
 Proof.
-pose proof open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec : lngen.
 #[export] Hint Rewrite open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec :
-forall rho1 a1 n1,
-  open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) = rho1.
-Proof.
-pose proof open_ty_poly_wrt_ty_mono_rec_close_ty_poly_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite open_ty_rho_wrt_ty_mono_rec_close_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ctx_wrt_ty_mono_rec_close_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 a1 n1,
-  open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ctx_wrt_ty_mono_rec n1 a1 G1) = G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ctx_wrt_ty_mono_rec_close_ctx_wrt_ty_mono_rec :
-forall G1 a1 n1,
-  open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) (close_ctx_wrt_ty_mono_rec n1 a1 G1) = G1.
-Proof.
-pose proof open_ctx_wrt_ty_mono_rec_close_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve open_ctx_wrt_ty_mono_rec_close_ctx_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite open_ctx_wrt_ty_mono_rec_close_ctx_wrt_ty_mono_rec using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -3073,16 +2737,6 @@ Qed.
 #[export] Hint Resolve open_ty_mono_wrt_ty_mono_close_ty_mono_wrt_ty_mono : lngen.
 #[export] Hint Rewrite open_ty_mono_wrt_ty_mono_close_ty_mono_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma open_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono :
-forall sig1 a1,
-  open_ty_poly_wrt_ty_mono (close_ty_poly_wrt_ty_mono a1 sig1) (ty_mono_var_f a1) = sig1.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve open_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono : lngen.
-#[export] Hint Rewrite open_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono using solve [auto] : lngen.
-
 Lemma open_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono :
 forall rho1 a1,
   open_ty_rho_wrt_ty_mono (close_ty_rho_wrt_ty_mono a1 rho1) (ty_mono_var_f a1) = rho1.
@@ -3093,15 +2747,15 @@ Qed.
 #[export] Hint Resolve open_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono : lngen.
 #[export] Hint Rewrite open_ty_rho_wrt_ty_mono_close_ty_rho_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma open_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono :
-forall G1 a1,
-  open_ctx_wrt_ty_mono (close_ctx_wrt_ty_mono a1 G1) (ty_mono_var_f a1) = G1.
+Lemma open_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono :
+forall sig1 a1,
+  open_ty_poly_wrt_ty_mono (close_ty_poly_wrt_ty_mono a1 sig1) (ty_mono_var_f a1) = sig1.
 Proof.
-unfold close_ctx_wrt_ty_mono; unfold open_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve open_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono : lngen.
-#[export] Hint Rewrite open_ctx_wrt_ty_mono_close_ctx_wrt_ty_mono using solve [auto] : lngen.
+#[export] Hint Resolve open_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono : lngen.
+#[export] Hint Rewrite open_ty_poly_wrt_ty_mono_close_ty_poly_wrt_ty_mono using solve [auto] : lngen.
 
 Lemma open_tm_wrt_tm_close_tm_wrt_tm :
 forall t1 x1,
@@ -3159,19 +2813,48 @@ Qed.
 
 (* begin hide *)
 
-Lemma open_ty_poly_wrt_ty_mono_rec_inj_open_ty_rho_wrt_ty_mono_rec_inj_mutual :
-(forall sig2 sig1 a1 n1,
-  a1 `notin` ftv_mono_ty_poly sig2 ->
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig2 = open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1 ->
-  sig2 = sig1) /\
+Lemma open_ty_rho_wrt_ty_mono_rec_inj_mutual :
 (forall rho2 rho1 a1 n1,
   a1 `notin` ftv_mono_ty_rho rho2 ->
   a1 `notin` ftv_mono_ty_rho rho1 ->
   open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho2 = open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1 ->
   rho2 = rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+intros; match goal with
+          | |- _ = ?term => destruct term
+        end;
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_ty_rho_wrt_ty_mono_rec_inj :
+forall rho2 rho1 a1 n1,
+  a1 `notin` ftv_mono_ty_rho rho2 ->
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho2 = open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1 ->
+  rho2 = rho1.
+Proof.
+pose proof open_ty_rho_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Immediate open_ty_rho_wrt_ty_mono_rec_inj : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_ty_poly_wrt_ty_mono_rec_inj_mutual :
+(forall sig2 sig1 a1 n1,
+  a1 `notin` ftv_mono_ty_poly sig2 ->
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig2 = open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1 ->
+  sig2 = sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 intros; match goal with
           | |- _ = ?term => destruct term
         end;
@@ -3189,60 +2872,10 @@ forall sig2 sig1 a1 n1,
   open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig2 = open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1 ->
   sig2 = sig1.
 Proof.
-pose proof open_ty_poly_wrt_ty_mono_rec_inj_open_ty_rho_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
+pose proof open_ty_poly_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Immediate open_ty_poly_wrt_ty_mono_rec_inj : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ty_rho_wrt_ty_mono_rec_inj :
-forall rho2 rho1 a1 n1,
-  a1 `notin` ftv_mono_ty_rho rho2 ->
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho2 = open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1 ->
-  rho2 = rho1.
-Proof.
-pose proof open_ty_poly_wrt_ty_mono_rec_inj_open_ty_rho_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate open_ty_rho_wrt_ty_mono_rec_inj : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ctx_wrt_ty_mono_rec_inj_mutual :
-(forall G2 G1 a1 n1,
-  a1 `notin` ftv_mono_ctx G2 ->
-  a1 `notin` ftv_mono_ctx G1 ->
-  open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G2 = open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1 ->
-  G2 = G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-intros; match goal with
-          | |- _ = ?term => destruct term
-        end;
-default_simp; eauto with lngen.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ctx_wrt_ty_mono_rec_inj :
-forall G2 G1 a1 n1,
-  a1 `notin` ftv_mono_ctx G2 ->
-  a1 `notin` ftv_mono_ctx G1 ->
-  open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G2 = open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1 ->
-  G2 = G1.
-Proof.
-pose proof open_ctx_wrt_ty_mono_rec_inj_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Immediate open_ctx_wrt_ty_mono_rec_inj : lngen.
 
 (* end hide *)
 
@@ -3326,18 +2959,6 @@ Qed.
 
 #[export] Hint Immediate open_ty_mono_wrt_ty_mono_inj : lngen.
 
-Lemma open_ty_poly_wrt_ty_mono_inj :
-forall sig2 sig1 a1,
-  a1 `notin` ftv_mono_ty_poly sig2 ->
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  open_ty_poly_wrt_ty_mono sig2 (ty_mono_var_f a1) = open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1) ->
-  sig2 = sig1.
-Proof.
-unfold open_ty_poly_wrt_ty_mono; eauto with lngen.
-Qed.
-
-#[export] Hint Immediate open_ty_poly_wrt_ty_mono_inj : lngen.
-
 Lemma open_ty_rho_wrt_ty_mono_inj :
 forall rho2 rho1 a1,
   a1 `notin` ftv_mono_ty_rho rho2 ->
@@ -3350,17 +2971,17 @@ Qed.
 
 #[export] Hint Immediate open_ty_rho_wrt_ty_mono_inj : lngen.
 
-Lemma open_ctx_wrt_ty_mono_inj :
-forall G2 G1 a1,
-  a1 `notin` ftv_mono_ctx G2 ->
-  a1 `notin` ftv_mono_ctx G1 ->
-  open_ctx_wrt_ty_mono G2 (ty_mono_var_f a1) = open_ctx_wrt_ty_mono G1 (ty_mono_var_f a1) ->
-  G2 = G1.
+Lemma open_ty_poly_wrt_ty_mono_inj :
+forall sig2 sig1 a1,
+  a1 `notin` ftv_mono_ty_poly sig2 ->
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  open_ty_poly_wrt_ty_mono sig2 (ty_mono_var_f a1) = open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1) ->
+  sig2 = sig1.
 Proof.
-unfold open_ctx_wrt_ty_mono; eauto with lngen.
+unfold open_ty_poly_wrt_ty_mono; eauto with lngen.
 Qed.
 
-#[export] Hint Immediate open_ctx_wrt_ty_mono_inj : lngen.
+#[export] Hint Immediate open_ty_poly_wrt_ty_mono_inj : lngen.
 
 Lemma open_tm_wrt_tm_inj :
 forall t2 t1 x1,
@@ -3423,15 +3044,40 @@ Qed.
 
 (* begin hide *)
 
-Lemma degree_ty_poly_wrt_ty_mono_of_lc_ty_poly_degree_ty_rho_wrt_ty_mono_of_lc_ty_rho_mutual :
-(forall sig1,
-  lc_ty_poly sig1 ->
-  degree_ty_poly_wrt_ty_mono 0 sig1) /\
+Lemma degree_ty_rho_wrt_ty_mono_of_lc_ty_rho_mutual :
 (forall rho1,
   lc_ty_rho rho1 ->
   degree_ty_rho_wrt_ty_mono 0 rho1).
 Proof.
-apply_mutual_ind lc_ty_poly_lc_ty_rho_mutind;
+apply_mutual_ind lc_ty_rho_mutind;
+intros;
+let a1 := fresh "a1" in pick_fresh a1;
+repeat (match goal with
+          | H1 : _, H2 : _ |- _ => specialize H1 with H2
+        end);
+default_simp; eauto with lngen.
+Qed.
+
+(* end hide *)
+
+Lemma degree_ty_rho_wrt_ty_mono_of_lc_ty_rho :
+forall rho1,
+  lc_ty_rho rho1 ->
+  degree_ty_rho_wrt_ty_mono 0 rho1.
+Proof.
+pose proof degree_ty_rho_wrt_ty_mono_of_lc_ty_rho_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_of_lc_ty_rho : lngen.
+
+(* begin hide *)
+
+Lemma degree_ty_poly_wrt_ty_mono_of_lc_ty_poly_mutual :
+(forall sig1,
+  lc_ty_poly sig1 ->
+  degree_ty_poly_wrt_ty_mono 0 sig1).
+Proof.
+apply_mutual_ind lc_ty_poly_mutind;
 intros;
 let a1 := fresh "a1" in pick_fresh a1;
 repeat (match goal with
@@ -3447,48 +3093,10 @@ forall sig1,
   lc_ty_poly sig1 ->
   degree_ty_poly_wrt_ty_mono 0 sig1.
 Proof.
-pose proof degree_ty_poly_wrt_ty_mono_of_lc_ty_poly_degree_ty_rho_wrt_ty_mono_of_lc_ty_rho_mutual as H; intuition eauto.
+pose proof degree_ty_poly_wrt_ty_mono_of_lc_ty_poly_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve degree_ty_poly_wrt_ty_mono_of_lc_ty_poly : lngen.
-
-Lemma degree_ty_rho_wrt_ty_mono_of_lc_ty_rho :
-forall rho1,
-  lc_ty_rho rho1 ->
-  degree_ty_rho_wrt_ty_mono 0 rho1.
-Proof.
-pose proof degree_ty_poly_wrt_ty_mono_of_lc_ty_poly_degree_ty_rho_wrt_ty_mono_of_lc_ty_rho_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ty_rho_wrt_ty_mono_of_lc_ty_rho : lngen.
-
-(* begin hide *)
-
-Lemma degree_ctx_wrt_ty_mono_of_lc_ctx_mutual :
-(forall G1,
-  lc_ctx G1 ->
-  degree_ctx_wrt_ty_mono 0 G1).
-Proof.
-apply_mutual_ind lc_ctx_mutind;
-intros;
-let a1 := fresh "a1" in pick_fresh a1;
-repeat (match goal with
-          | H1 : _, H2 : _ |- _ => specialize H1 with H2
-        end);
-default_simp; eauto with lngen.
-Qed.
-
-(* end hide *)
-
-Lemma degree_ctx_wrt_ty_mono_of_lc_ctx :
-forall G1,
-  lc_ctx G1 ->
-  degree_ctx_wrt_ty_mono 0 G1.
-Proof.
-pose proof degree_ctx_wrt_ty_mono_of_lc_ctx_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve degree_ctx_wrt_ty_mono_of_lc_ctx : lngen.
 
 (* begin hide *)
 
@@ -3589,12 +3197,8 @@ Qed.
 
 (* begin hide *)
 
-Lemma lc_ty_poly_of_degree_lc_ty_rho_of_degree_size_mutual :
+Lemma lc_ty_rho_of_degree_size_mutual :
 forall i1,
-(forall sig1,
-  size_ty_poly sig1 = i1 ->
-  degree_ty_poly_wrt_ty_mono 0 sig1 ->
-  lc_ty_poly sig1) /\
 (forall rho1,
   size_ty_rho rho1 = i1 ->
   degree_ty_rho_wrt_ty_mono 0 rho1 ->
@@ -3602,7 +3206,46 @@ forall i1,
 Proof.
 intros i1; pattern i1; apply lt_wf_rec;
 clear i1; intros i1 H1;
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp;
+(* non-trivial cases *)
+constructor; default_simp; eapply_first_lt_hyp;
+(* instantiate the size *)
+match goal with
+  | |- _ = _ => reflexivity
+  | _ => idtac
+end;
+instantiate;
+(* everything should be easy now *)
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma lc_ty_rho_of_degree :
+forall rho1,
+  degree_ty_rho_wrt_ty_mono 0 rho1 ->
+  lc_ty_rho rho1.
+Proof.
+intros rho1; intros;
+pose proof (lc_ty_rho_of_degree_size_mutual (size_ty_rho rho1));
+intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_ty_rho_of_degree : lngen.
+
+(* begin hide *)
+
+Lemma lc_ty_poly_of_degree_size_mutual :
+forall i1,
+(forall sig1,
+  size_ty_poly sig1 = i1 ->
+  degree_ty_poly_wrt_ty_mono 0 sig1 ->
+  lc_ty_poly sig1).
+Proof.
+intros i1; pattern i1; apply lt_wf_rec;
+clear i1; intros i1 H1;
+apply_mutual_ind ty_poly_mutind;
 default_simp;
 (* non-trivial cases *)
 constructor; default_simp; eapply_first_lt_hyp;
@@ -3624,62 +3267,11 @@ forall sig1,
   lc_ty_poly sig1.
 Proof.
 intros sig1; intros;
-pose proof (lc_ty_poly_of_degree_lc_ty_rho_of_degree_size_mutual (size_ty_poly sig1));
+pose proof (lc_ty_poly_of_degree_size_mutual (size_ty_poly sig1));
 intuition eauto.
 Qed.
 
 #[export] Hint Resolve lc_ty_poly_of_degree : lngen.
-
-Lemma lc_ty_rho_of_degree :
-forall rho1,
-  degree_ty_rho_wrt_ty_mono 0 rho1 ->
-  lc_ty_rho rho1.
-Proof.
-intros rho1; intros;
-pose proof (lc_ty_poly_of_degree_lc_ty_rho_of_degree_size_mutual (size_ty_rho rho1));
-intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_ty_rho_of_degree : lngen.
-
-(* begin hide *)
-
-Lemma lc_ctx_of_degree_size_mutual :
-forall i1,
-(forall G1,
-  size_ctx G1 = i1 ->
-  degree_ctx_wrt_ty_mono 0 G1 ->
-  lc_ctx G1).
-Proof.
-intros i1; pattern i1; apply lt_wf_rec;
-clear i1; intros i1 H1;
-apply_mutual_ind ctx_mutind;
-default_simp;
-(* non-trivial cases *)
-constructor; default_simp; eapply_first_lt_hyp;
-(* instantiate the size *)
-match goal with
-  | |- _ = _ => reflexivity
-  | _ => idtac
-end;
-instantiate;
-(* everything should be easy now *)
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma lc_ctx_of_degree :
-forall G1,
-  degree_ctx_wrt_ty_mono 0 G1 ->
-  lc_ctx G1.
-Proof.
-intros G1; intros;
-pose proof (lc_ctx_of_degree_size_mutual (size_ctx G1));
-intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_ctx_of_degree : lngen.
 
 (* begin hide *)
 
@@ -3728,18 +3320,16 @@ Ltac ty_mono_lc_exists_tac :=
               let J1 := fresh in pose proof H as J1; apply degree_ty_mono_wrt_ty_mono_of_lc_ty_mono in J1; clear H
           end).
 
-Ltac ty_poly_ty_rho_lc_exists_tac :=
+Ltac ty_rho_lc_exists_tac :=
   repeat (match goal with
-            | H : _ |- _ =>
-              let J1 := fresh in pose proof H as J1; apply degree_ty_poly_wrt_ty_mono_of_lc_ty_poly in J1; clear H
             | H : _ |- _ =>
               let J1 := fresh in pose proof H as J1; apply degree_ty_rho_wrt_ty_mono_of_lc_ty_rho in J1; clear H
           end).
 
-Ltac ctx_lc_exists_tac :=
+Ltac ty_poly_lc_exists_tac :=
   repeat (match goal with
             | H : _ |- _ =>
-              let J1 := fresh in pose proof H as J1; apply degree_ctx_wrt_ty_mono_of_lc_ctx in J1; clear H
+              let J1 := fresh in pose proof H as J1; apply degree_ty_poly_wrt_ty_mono_of_lc_ty_poly in J1; clear H
           end).
 
 Ltac tm_lc_exists_tac :=
@@ -3754,7 +3344,7 @@ forall a1 sig1,
   lc_ty_poly (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)) ->
   lc_ty_poly (ty_poly_poly_gen sig1).
 Proof.
-intros; ty_poly_ty_rho_lc_exists_tac; eauto 6 with lngen.
+intros; ty_poly_lc_exists_tac; eauto 6 with lngen.
 Qed.
 
 Lemma lc_exp_abs_exists :
@@ -3820,23 +3410,6 @@ Qed.
 
 #[export] Hint Resolve lc_body_ty_mono_wrt_ty_mono : lngen.
 
-Lemma lc_body_ty_poly_wrt_ty_mono :
-forall sig1 tau1,
-  body_ty_poly_wrt_ty_mono sig1 ->
-  lc_ty_mono tau1 ->
-  lc_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1).
-Proof.
-unfold body_ty_poly_wrt_ty_mono;
-default_simp;
-let a1 := fresh "x" in
-pick_fresh a1;
-specialize_all a1;
-ty_poly_ty_rho_lc_exists_tac;
-eauto 7 with lngen.
-Qed.
-
-#[export] Hint Resolve lc_body_ty_poly_wrt_ty_mono : lngen.
-
 Lemma lc_body_ty_rho_wrt_ty_mono :
 forall rho1 tau1,
   body_ty_rho_wrt_ty_mono rho1 ->
@@ -3848,28 +3421,28 @@ default_simp;
 let a1 := fresh "x" in
 pick_fresh a1;
 specialize_all a1;
-ty_poly_ty_rho_lc_exists_tac;
+ty_rho_lc_exists_tac;
 eauto 7 with lngen.
 Qed.
 
 #[export] Hint Resolve lc_body_ty_rho_wrt_ty_mono : lngen.
 
-Lemma lc_body_ctx_wrt_ty_mono :
-forall G1 tau1,
-  body_ctx_wrt_ty_mono G1 ->
+Lemma lc_body_ty_poly_wrt_ty_mono :
+forall sig1 tau1,
+  body_ty_poly_wrt_ty_mono sig1 ->
   lc_ty_mono tau1 ->
-  lc_ctx (open_ctx_wrt_ty_mono G1 tau1).
+  lc_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1).
 Proof.
-unfold body_ctx_wrt_ty_mono;
+unfold body_ty_poly_wrt_ty_mono;
 default_simp;
 let a1 := fresh "x" in
 pick_fresh a1;
 specialize_all a1;
-ctx_lc_exists_tac;
+ty_poly_lc_exists_tac;
 eauto 7 with lngen.
 Qed.
 
-#[export] Hint Resolve lc_body_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve lc_body_ty_poly_wrt_ty_mono : lngen.
 
 Lemma lc_body_tm_wrt_tm :
 forall t1 t2,
@@ -3969,11 +3542,32 @@ Qed.
 
 (* begin hide *)
 
-Lemma lc_ty_poly_unique_lc_ty_rho_unique_mutual :
-(forall sig1 (proof2 proof3 : lc_ty_poly sig1), proof2 = proof3) /\
+Lemma lc_ty_rho_unique_mutual :
 (forall rho1 (proof2 proof3 : lc_ty_rho rho1), proof2 = proof3).
 Proof.
-apply_mutual_ind lc_ty_poly_lc_ty_rho_mutind;
+apply_mutual_ind lc_ty_rho_mutind;
+intros;
+let proof1 := fresh "proof1" in
+rename_last_into proof1; dependent destruction proof1;
+f_equal; default_simp; auto using @functional_extensionality_dep with lngen.
+Qed.
+
+(* end hide *)
+
+Lemma lc_ty_rho_unique :
+forall rho1 (proof2 proof3 : lc_ty_rho rho1), proof2 = proof3.
+Proof.
+pose proof lc_ty_rho_unique_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_ty_rho_unique : lngen.
+
+(* begin hide *)
+
+Lemma lc_ty_poly_unique_mutual :
+(forall sig1 (proof2 proof3 : lc_ty_poly sig1), proof2 = proof3).
+Proof.
+apply_mutual_ind lc_ty_poly_mutind;
 intros;
 let proof1 := fresh "proof1" in
 rename_last_into proof1; dependent destruction proof1;
@@ -3985,40 +3579,10 @@ Qed.
 Lemma lc_ty_poly_unique :
 forall sig1 (proof2 proof3 : lc_ty_poly sig1), proof2 = proof3.
 Proof.
-pose proof lc_ty_poly_unique_lc_ty_rho_unique_mutual as H; intuition eauto.
+pose proof lc_ty_poly_unique_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve lc_ty_poly_unique : lngen.
-
-Lemma lc_ty_rho_unique :
-forall rho1 (proof2 proof3 : lc_ty_rho rho1), proof2 = proof3.
-Proof.
-pose proof lc_ty_poly_unique_lc_ty_rho_unique_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_ty_rho_unique : lngen.
-
-(* begin hide *)
-
-Lemma lc_ctx_unique_mutual :
-(forall G1 (proof2 proof3 : lc_ctx G1), proof2 = proof3).
-Proof.
-apply_mutual_ind lc_ctx_mutind;
-intros;
-let proof1 := fresh "proof1" in
-rename_last_into proof1; dependent destruction proof1;
-f_equal; default_simp; auto using @functional_extensionality_dep with lngen.
-Qed.
-
-(* end hide *)
-
-Lemma lc_ctx_unique :
-forall G1 (proof2 proof3 : lc_ctx G1), proof2 = proof3.
-Proof.
-pose proof lc_ctx_unique_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_ctx_unique : lngen.
 
 (* begin hide *)
 
@@ -4063,11 +3627,29 @@ Qed.
 
 (* begin hide *)
 
-Lemma lc_ty_poly_of_lc_set_ty_poly_lc_ty_rho_of_lc_set_ty_rho_mutual :
-(forall sig1, lc_set_ty_poly sig1 -> lc_ty_poly sig1) /\
+Lemma lc_ty_rho_of_lc_set_ty_rho_mutual :
 (forall rho1, lc_set_ty_rho rho1 -> lc_ty_rho rho1).
 Proof.
-apply_mutual_ind lc_set_ty_poly_lc_set_ty_rho_mutind;
+apply_mutual_ind lc_set_ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma lc_ty_rho_of_lc_set_ty_rho :
+forall rho1, lc_set_ty_rho rho1 -> lc_ty_rho rho1.
+Proof.
+pose proof lc_ty_rho_of_lc_set_ty_rho_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_ty_rho_of_lc_set_ty_rho : lngen.
+
+(* begin hide *)
+
+Lemma lc_ty_poly_of_lc_set_ty_poly_mutual :
+(forall sig1, lc_set_ty_poly sig1 -> lc_ty_poly sig1).
+Proof.
+apply_mutual_ind lc_set_ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -4076,37 +3658,10 @@ Qed.
 Lemma lc_ty_poly_of_lc_set_ty_poly :
 forall sig1, lc_set_ty_poly sig1 -> lc_ty_poly sig1.
 Proof.
-pose proof lc_ty_poly_of_lc_set_ty_poly_lc_ty_rho_of_lc_set_ty_rho_mutual as H; intuition eauto.
+pose proof lc_ty_poly_of_lc_set_ty_poly_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve lc_ty_poly_of_lc_set_ty_poly : lngen.
-
-Lemma lc_ty_rho_of_lc_set_ty_rho :
-forall rho1, lc_set_ty_rho rho1 -> lc_ty_rho rho1.
-Proof.
-pose proof lc_ty_poly_of_lc_set_ty_poly_lc_ty_rho_of_lc_set_ty_rho_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_ty_rho_of_lc_set_ty_rho : lngen.
-
-(* begin hide *)
-
-Lemma lc_ctx_of_lc_set_ctx_mutual :
-(forall G1, lc_set_ctx G1 -> lc_ctx G1).
-Proof.
-apply_mutual_ind lc_set_ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma lc_ctx_of_lc_set_ctx :
-forall G1, lc_set_ctx G1 -> lc_ctx G1.
-Proof.
-pose proof lc_ctx_of_lc_set_ctx_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_ctx_of_lc_set_ctx : lngen.
 
 (* begin hide *)
 
@@ -4171,12 +3726,8 @@ Qed.
 
 (* begin hide *)
 
-Lemma lc_set_ty_poly_of_lc_ty_poly_lc_set_ty_rho_of_lc_ty_rho_size_mutual :
+Lemma lc_set_ty_rho_of_lc_ty_rho_size_mutual :
 forall i1,
-(forall sig1,
-  size_ty_poly sig1 = i1 ->
-  lc_ty_poly sig1 ->
-  lc_set_ty_poly sig1) *
 (forall rho1,
   size_ty_rho rho1 = i1 ->
   lc_ty_rho rho1 ->
@@ -4184,15 +3735,55 @@ forall i1,
 Proof.
 intros i1; pattern i1; apply lt_wf_rec;
 clear i1; intros i1 H1;
-apply_mutual_ind ty_poly_ty_rho_mutrec;
+apply_mutual_ind ty_rho_mutrec;
 default_simp;
 try solve [assert False by default_simp; tauto];
 (* non-trivial cases *)
 constructor; default_simp;
 try first [apply lc_set_ty_rho_of_lc_ty_rho
- | apply lc_set_ty_poly_of_lc_ty_poly
- | apply lc_set_ty_mono_of_lc_ty_mono
- | apply lc_set_ty_rho_of_lc_ty_rho
+ | apply lc_set_ty_mono_of_lc_ty_mono];
+default_simp; eapply_first_lt_hyp;
+(* instantiate the size *)
+match goal with
+  | |- _ = _ => reflexivity
+  | _ => idtac
+end;
+instantiate;
+(* everything should be easy now *)
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma lc_set_ty_rho_of_lc_ty_rho :
+forall rho1,
+  lc_ty_rho rho1 ->
+  lc_set_ty_rho rho1.
+Proof.
+intros rho1; intros;
+pose proof (lc_set_ty_rho_of_lc_ty_rho_size_mutual (size_ty_rho rho1));
+intuition eauto.
+Qed.
+
+#[export] Hint Resolve lc_set_ty_rho_of_lc_ty_rho : lngen.
+
+(* begin hide *)
+
+Lemma lc_set_ty_poly_of_lc_ty_poly_size_mutual :
+forall i1,
+(forall sig1,
+  size_ty_poly sig1 = i1 ->
+  lc_ty_poly sig1 ->
+  lc_set_ty_poly sig1).
+Proof.
+intros i1; pattern i1; apply lt_wf_rec;
+clear i1; intros i1 H1;
+apply_mutual_ind ty_poly_mutrec;
+default_simp;
+try solve [assert False by default_simp; tauto];
+(* non-trivial cases *)
+constructor; default_simp;
+try first [apply lc_set_ty_rho_of_lc_ty_rho
  | apply lc_set_ty_poly_of_lc_ty_poly
  | apply lc_set_ty_mono_of_lc_ty_mono];
 default_simp; eapply_first_lt_hyp;
@@ -4214,68 +3805,11 @@ forall sig1,
   lc_set_ty_poly sig1.
 Proof.
 intros sig1; intros;
-pose proof (lc_set_ty_poly_of_lc_ty_poly_lc_set_ty_rho_of_lc_ty_rho_size_mutual (size_ty_poly sig1));
+pose proof (lc_set_ty_poly_of_lc_ty_poly_size_mutual (size_ty_poly sig1));
 intuition eauto.
 Qed.
 
 #[export] Hint Resolve lc_set_ty_poly_of_lc_ty_poly : lngen.
-
-Lemma lc_set_ty_rho_of_lc_ty_rho :
-forall rho1,
-  lc_ty_rho rho1 ->
-  lc_set_ty_rho rho1.
-Proof.
-intros rho1; intros;
-pose proof (lc_set_ty_poly_of_lc_ty_poly_lc_set_ty_rho_of_lc_ty_rho_size_mutual (size_ty_rho rho1));
-intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_set_ty_rho_of_lc_ty_rho : lngen.
-
-(* begin hide *)
-
-Lemma lc_set_ctx_of_lc_ctx_size_mutual :
-forall i1,
-(forall G1,
-  size_ctx G1 = i1 ->
-  lc_ctx G1 ->
-  lc_set_ctx G1).
-Proof.
-intros i1; pattern i1; apply lt_wf_rec;
-clear i1; intros i1 H1;
-apply_mutual_ind ctx_mutrec;
-default_simp;
-try solve [assert False by default_simp; tauto];
-(* non-trivial cases *)
-constructor; default_simp;
-try first [apply lc_set_ctx_of_lc_ctx
- | apply lc_set_ty_rho_of_lc_ty_rho
- | apply lc_set_ty_poly_of_lc_ty_poly
- | apply lc_set_ty_mono_of_lc_ty_mono];
-default_simp; eapply_first_lt_hyp;
-(* instantiate the size *)
-match goal with
-  | |- _ = _ => reflexivity
-  | _ => idtac
-end;
-instantiate;
-(* everything should be easy now *)
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma lc_set_ctx_of_lc_ctx :
-forall G1,
-  lc_ctx G1 ->
-  lc_set_ctx G1.
-Proof.
-intros G1; intros;
-pose proof (lc_set_ctx_of_lc_ctx_size_mutual (size_ctx G1));
-intuition eauto.
-Qed.
-
-#[export] Hint Resolve lc_set_ctx_of_lc_ctx : lngen.
 
 (* begin hide *)
 
@@ -4361,17 +3895,43 @@ Qed.
 
 (* begin hide *)
 
-Lemma close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual :
-(forall sig1 a1 n1,
-  degree_ty_poly_wrt_ty_mono n1 sig1 ->
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  close_ty_poly_wrt_ty_mono_rec n1 a1 sig1 = sig1) /\
+Lemma close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual :
 (forall rho1 a1 n1,
   degree_ty_rho_wrt_ty_mono n1 rho1 ->
   a1 `notin` ftv_mono_ty_rho rho1 ->
   close_ty_rho_wrt_ty_mono_rec n1 a1 rho1 = rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono :
+forall rho1 a1 n1,
+  degree_ty_rho_wrt_ty_mono n1 rho1 ->
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  close_ty_rho_wrt_ty_mono_rec n1 a1 rho1 = rho1.
+Proof.
+pose proof close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono : lngen.
+#[export] Hint Rewrite close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_mutual :
+(forall sig1 a1 n1,
+  degree_ty_poly_wrt_ty_mono n1 sig1 ->
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  close_ty_poly_wrt_ty_mono_rec n1 a1 sig1 = sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -4385,57 +3945,11 @@ forall sig1 a1 n1,
   a1 `notin` ftv_mono_ty_poly sig1 ->
   close_ty_poly_wrt_ty_mono_rec n1 a1 sig1 = sig1.
 Proof.
-pose proof close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
+pose proof close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono : lngen.
 #[export] Hint Rewrite close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono :
-forall rho1 a1 n1,
-  degree_ty_rho_wrt_ty_mono n1 rho1 ->
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  close_ty_rho_wrt_ty_mono_rec n1 a1 rho1 = rho1.
-Proof.
-pose proof close_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono : lngen.
-#[export] Hint Rewrite close_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono_mutual :
-(forall G1 a1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  a1 `notin` ftv_mono_ctx G1 ->
-  close_ctx_wrt_ty_mono_rec n1 a1 G1 = G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma close_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono :
-forall G1 a1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  a1 `notin` ftv_mono_ctx G1 ->
-  close_ctx_wrt_ty_mono_rec n1 a1 G1 = G1.
-Proof.
-pose proof close_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve close_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono : lngen.
-#[export] Hint Rewrite close_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -4511,18 +4025,6 @@ Qed.
 #[export] Hint Resolve close_ty_mono_wrt_ty_mono_lc_ty_mono : lngen.
 #[export] Hint Rewrite close_ty_mono_wrt_ty_mono_lc_ty_mono using solve [auto] : lngen.
 
-Lemma close_ty_poly_wrt_ty_mono_lc_ty_poly :
-forall sig1 a1,
-  lc_ty_poly sig1 ->
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  close_ty_poly_wrt_ty_mono a1 sig1 = sig1.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve close_ty_poly_wrt_ty_mono_lc_ty_poly : lngen.
-#[export] Hint Rewrite close_ty_poly_wrt_ty_mono_lc_ty_poly using solve [auto] : lngen.
-
 Lemma close_ty_rho_wrt_ty_mono_lc_ty_rho :
 forall rho1 a1,
   lc_ty_rho rho1 ->
@@ -4535,17 +4037,17 @@ Qed.
 #[export] Hint Resolve close_ty_rho_wrt_ty_mono_lc_ty_rho : lngen.
 #[export] Hint Rewrite close_ty_rho_wrt_ty_mono_lc_ty_rho using solve [auto] : lngen.
 
-Lemma close_ctx_wrt_ty_mono_lc_ctx :
-forall G1 a1,
-  lc_ctx G1 ->
-  a1 `notin` ftv_mono_ctx G1 ->
-  close_ctx_wrt_ty_mono a1 G1 = G1.
+Lemma close_ty_poly_wrt_ty_mono_lc_ty_poly :
+forall sig1 a1,
+  lc_ty_poly sig1 ->
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  close_ty_poly_wrt_ty_mono a1 sig1 = sig1.
 Proof.
-unfold close_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve close_ctx_wrt_ty_mono_lc_ctx : lngen.
-#[export] Hint Rewrite close_ctx_wrt_ty_mono_lc_ctx using solve [auto] : lngen.
+#[export] Hint Resolve close_ty_poly_wrt_ty_mono_lc_ty_poly : lngen.
+#[export] Hint Rewrite close_ty_poly_wrt_ty_mono_lc_ty_poly using solve [auto] : lngen.
 
 Lemma close_tm_wrt_tm_lc_tm :
 forall t1 x1,
@@ -4601,15 +4103,40 @@ Qed.
 
 (* begin hide *)
 
-Lemma open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual :
-(forall sig1 tau1 n1,
-  degree_ty_poly_wrt_ty_mono n1 sig1 ->
-  open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1 = sig1) /\
+Lemma open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual :
 (forall rho1 tau1 n1,
   degree_ty_rho_wrt_ty_mono n1 rho1 ->
   open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1 = rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono :
+forall rho1 tau1 n1,
+  degree_ty_rho_wrt_ty_mono n1 rho1 ->
+  open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1 = rho1.
+Proof.
+pose proof open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono : lngen.
+#[export] Hint Rewrite open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_mutual :
+(forall sig1 tau1 n1,
+  degree_ty_poly_wrt_ty_mono n1 sig1 ->
+  open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1 = sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -4622,54 +4149,11 @@ forall sig1 tau1 n1,
   degree_ty_poly_wrt_ty_mono n1 sig1 ->
   open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1 = sig1.
 Proof.
-pose proof open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
+pose proof open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono : lngen.
 #[export] Hint Rewrite open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono :
-forall rho1 tau1 n1,
-  degree_ty_rho_wrt_ty_mono n1 rho1 ->
-  open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1 = rho1.
-Proof.
-pose proof open_ty_poly_wrt_ty_mono_rec_degree_ty_poly_wrt_ty_mono_open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono : lngen.
-#[export] Hint Rewrite open_ty_rho_wrt_ty_mono_rec_degree_ty_rho_wrt_ty_mono using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono_mutual :
-(forall G1 tau1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  open_ctx_wrt_ty_mono_rec n1 tau1 G1 = G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma open_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono :
-forall G1 tau1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  open_ctx_wrt_ty_mono_rec n1 tau1 G1 = G1.
-Proof.
-pose proof open_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve open_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono : lngen.
-#[export] Hint Rewrite open_ctx_wrt_ty_mono_rec_degree_ctx_wrt_ty_mono using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -4740,17 +4224,6 @@ Qed.
 #[export] Hint Resolve open_ty_mono_wrt_ty_mono_lc_ty_mono : lngen.
 #[export] Hint Rewrite open_ty_mono_wrt_ty_mono_lc_ty_mono using solve [auto] : lngen.
 
-Lemma open_ty_poly_wrt_ty_mono_lc_ty_poly :
-forall sig1 tau1,
-  lc_ty_poly sig1 ->
-  open_ty_poly_wrt_ty_mono sig1 tau1 = sig1.
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve open_ty_poly_wrt_ty_mono_lc_ty_poly : lngen.
-#[export] Hint Rewrite open_ty_poly_wrt_ty_mono_lc_ty_poly using solve [auto] : lngen.
-
 Lemma open_ty_rho_wrt_ty_mono_lc_ty_rho :
 forall rho1 tau1,
   lc_ty_rho rho1 ->
@@ -4762,16 +4235,16 @@ Qed.
 #[export] Hint Resolve open_ty_rho_wrt_ty_mono_lc_ty_rho : lngen.
 #[export] Hint Rewrite open_ty_rho_wrt_ty_mono_lc_ty_rho using solve [auto] : lngen.
 
-Lemma open_ctx_wrt_ty_mono_lc_ctx :
-forall G1 tau1,
-  lc_ctx G1 ->
-  open_ctx_wrt_ty_mono G1 tau1 = G1.
+Lemma open_ty_poly_wrt_ty_mono_lc_ty_poly :
+forall sig1 tau1,
+  lc_ty_poly sig1 ->
+  open_ty_poly_wrt_ty_mono sig1 tau1 = sig1.
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve open_ctx_wrt_ty_mono_lc_ctx : lngen.
-#[export] Hint Rewrite open_ctx_wrt_ty_mono_lc_ctx using solve [auto] : lngen.
+#[export] Hint Resolve open_ty_poly_wrt_ty_mono_lc_ty_poly : lngen.
+#[export] Hint Rewrite open_ty_poly_wrt_ty_mono_lc_ty_poly using solve [auto] : lngen.
 
 Lemma open_tm_wrt_tm_lc_tm :
 forall t2 t1,
@@ -4830,13 +4303,37 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 a1 n1,
-  ftv_mono_ty_poly (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) [=] remove a1 (ftv_mono_ty_poly sig1)) /\
+Lemma ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 a1 n1,
   ftv_mono_ty_rho (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) [=] remove a1 (ftv_mono_ty_rho rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec :
+forall rho1 a1 n1,
+  ftv_mono_ty_rho (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) [=] remove a1 (ftv_mono_ty_rho rho1).
+Proof.
+pose proof ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec : lngen.
+#[export] Hint Rewrite ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 a1 n1,
+  ftv_mono_ty_poly (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) [=] remove a1 (ftv_mono_ty_poly sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -4848,51 +4345,11 @@ Lemma ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec :
 forall sig1 a1 n1,
   ftv_mono_ty_poly (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1) [=] remove a1 (ftv_mono_ty_poly sig1).
 Proof.
-pose proof ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec : lngen.
 #[export] Hint Rewrite ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec :
-forall rho1 a1 n1,
-  ftv_mono_ty_rho (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1) [=] remove a1 (ftv_mono_ty_rho rho1).
-Proof.
-pose proof ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec using solve [auto] : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_close_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 a1 n1,
-  ftv_mono_ctx (close_ctx_wrt_ty_mono_rec n1 a1 G1) [=] remove a1 (ftv_mono_ctx G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_close_ctx_wrt_ty_mono_rec :
-forall G1 a1 n1,
-  ftv_mono_ctx (close_ctx_wrt_ty_mono_rec n1 a1 G1) [=] remove a1 (ftv_mono_ctx G1).
-Proof.
-pose proof ftv_mono_ctx_close_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_close_ctx_wrt_ty_mono_rec : lngen.
-#[export] Hint Rewrite ftv_mono_ctx_close_ctx_wrt_ty_mono_rec using solve [auto] : lngen.
 
 (* end hide *)
 
@@ -5010,16 +4467,6 @@ Qed.
 #[export] Hint Resolve ftv_mono_ty_mono_close_ty_mono_wrt_ty_mono : lngen.
 #[export] Hint Rewrite ftv_mono_ty_mono_close_ty_mono_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono :
-forall sig1 a1,
-  ftv_mono_ty_poly (close_ty_poly_wrt_ty_mono a1 sig1) [=] remove a1 (ftv_mono_ty_poly sig1).
-Proof.
-unfold close_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono : lngen.
-#[export] Hint Rewrite ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono using solve [auto] : lngen.
-
 Lemma ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono :
 forall rho1 a1,
   ftv_mono_ty_rho (close_ty_rho_wrt_ty_mono a1 rho1) [=] remove a1 (ftv_mono_ty_rho rho1).
@@ -5030,15 +4477,15 @@ Qed.
 #[export] Hint Resolve ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono : lngen.
 #[export] Hint Rewrite ftv_mono_ty_rho_close_ty_rho_wrt_ty_mono using solve [auto] : lngen.
 
-Lemma ftv_mono_ctx_close_ctx_wrt_ty_mono :
-forall G1 a1,
-  ftv_mono_ctx (close_ctx_wrt_ty_mono a1 G1) [=] remove a1 (ftv_mono_ctx G1).
+Lemma ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono :
+forall sig1 a1,
+  ftv_mono_ty_poly (close_ty_poly_wrt_ty_mono a1 sig1) [=] remove a1 (ftv_mono_ty_poly sig1).
 Proof.
-unfold close_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve ftv_mono_ctx_close_ctx_wrt_ty_mono : lngen.
-#[export] Hint Rewrite ftv_mono_ctx_close_ctx_wrt_ty_mono using solve [auto] : lngen.
+#[export] Hint Resolve ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono : lngen.
+#[export] Hint Rewrite ftv_mono_ty_poly_close_ty_poly_wrt_ty_mono using solve [auto] : lngen.
 
 Lemma fv_tm_close_tm_wrt_tm :
 forall t1 x1,
@@ -5107,13 +4554,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower_ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower_mutual :
-(forall sig1 tau1 n1,
-  ftv_mono_ty_poly sig1 [<=] ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1)) /\
+Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower_mutual :
 (forall rho1 tau1 n1,
   ftv_mono_ty_rho rho1 [<=] ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower :
+forall rho1 tau1 n1,
+  ftv_mono_ty_rho rho1 [<=] ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1).
+Proof.
+pose proof ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower_mutual :
+(forall sig1 tau1 n1,
+  ftv_mono_ty_poly sig1 [<=] ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -5125,48 +4595,10 @@ Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower :
 forall sig1 tau1 n1,
   ftv_mono_ty_poly sig1 [<=] ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1).
 Proof.
-pose proof ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower_ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower :
-forall rho1 tau1 n1,
-  ftv_mono_ty_rho rho1 [<=] ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1).
-Proof.
-pose proof ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_lower_ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_lower : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_lower_mutual :
-(forall G1 tau1 n1,
-  ftv_mono_ctx G1 [<=] ftv_mono_ctx (open_ctx_wrt_ty_mono_rec n1 tau1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_lower :
-forall G1 tau1 n1,
-  ftv_mono_ctx G1 [<=] ftv_mono_ctx (open_ctx_wrt_ty_mono_rec n1 tau1 G1).
-Proof.
-pose proof ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_lower_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_lower : lngen.
 
 (* end hide *)
 
@@ -5279,15 +4711,6 @@ Qed.
 
 #[export] Hint Resolve ftv_mono_ty_mono_open_ty_mono_wrt_ty_mono_lower : lngen.
 
-Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_lower :
-forall sig1 tau1,
-  ftv_mono_ty_poly sig1 [<=] ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1).
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_lower : lngen.
-
 Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_lower :
 forall rho1 tau1,
   ftv_mono_ty_rho rho1 [<=] ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono rho1 tau1).
@@ -5297,14 +4720,14 @@ Qed.
 
 #[export] Hint Resolve ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_lower : lngen.
 
-Lemma ftv_mono_ctx_open_ctx_wrt_ty_mono_lower :
-forall G1 tau1,
-  ftv_mono_ctx G1 [<=] ftv_mono_ctx (open_ctx_wrt_ty_mono G1 tau1).
+Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_lower :
+forall sig1 tau1,
+  ftv_mono_ty_poly sig1 [<=] ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1).
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve ftv_mono_ctx_open_ctx_wrt_ty_mono_lower : lngen.
+#[export] Hint Resolve ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_lower : lngen.
 
 Lemma fv_tm_open_tm_wrt_tm_lower :
 forall t1 t2,
@@ -5369,13 +4792,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper_ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper_mutual :
-(forall sig1 tau1 n1,
-  ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_poly sig1) /\
+Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper_mutual :
 (forall rho1 tau1 n1,
   ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_rho rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper :
+forall rho1 tau1 n1,
+  ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_rho rho1.
+Proof.
+pose proof ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper_mutual :
+(forall sig1 tau1 n1,
+  ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_poly sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -5387,48 +4833,10 @@ Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper :
 forall sig1 tau1 n1,
   ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_poly sig1.
 Proof.
-pose proof ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper_ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper :
-forall rho1 tau1 n1,
-  ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_rho rho1.
-Proof.
-pose proof ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_upper_ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_upper : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_upper_mutual :
-(forall G1 tau1 n1,
-  ftv_mono_ctx (open_ctx_wrt_ty_mono_rec n1 tau1 G1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ctx G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_upper :
-forall G1 tau1 n1,
-  ftv_mono_ctx (open_ctx_wrt_ty_mono_rec n1 tau1 G1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ctx G1.
-Proof.
-pose proof ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_upper_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_open_ctx_wrt_ty_mono_rec_upper : lngen.
 
 (* end hide *)
 
@@ -5541,15 +4949,6 @@ Qed.
 
 #[export] Hint Resolve ftv_mono_ty_mono_open_ty_mono_wrt_ty_mono_upper : lngen.
 
-Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_upper :
-forall sig1 tau1,
-  ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_poly sig1.
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_upper : lngen.
-
 Lemma ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_upper :
 forall rho1 tau1,
   ftv_mono_ty_rho (open_ty_rho_wrt_ty_mono rho1 tau1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_rho rho1.
@@ -5559,14 +4958,14 @@ Qed.
 
 #[export] Hint Resolve ftv_mono_ty_rho_open_ty_rho_wrt_ty_mono_upper : lngen.
 
-Lemma ftv_mono_ctx_open_ctx_wrt_ty_mono_upper :
-forall G1 tau1,
-  ftv_mono_ctx (open_ctx_wrt_ty_mono G1 tau1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ctx G1.
+Lemma ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_upper :
+forall sig1 tau1,
+  ftv_mono_ty_poly (open_ty_poly_wrt_ty_mono sig1 tau1) [<=] ftv_mono_ty_mono tau1 `union` ftv_mono_ty_poly sig1.
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve ftv_mono_ctx_open_ctx_wrt_ty_mono_upper : lngen.
+#[export] Hint Resolve ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_upper : lngen.
 
 Lemma fv_tm_open_tm_wrt_tm_upper :
 forall t1 t2,
@@ -5630,15 +5029,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh_ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh_mutual :
-(forall sig1 tau1 a1,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1) [=] ftv_mono_ty_poly sig1) /\
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh_mutual :
 (forall rho1 tau1 a1,
   a1 `notin` ftv_mono_ty_rho rho1 ->
   ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1) [=] ftv_mono_ty_rho rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh :
+forall rho1 tau1 a1,
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1) [=] ftv_mono_ty_rho rho1.
+Proof.
+pose proof ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh : lngen.
+#[export] Hint Rewrite ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh using solve [auto] : lngen.
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh_mutual :
+(forall sig1 tau1 a1,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1) [=] ftv_mono_ty_poly sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -5649,46 +5069,11 @@ forall sig1 tau1 a1,
   a1 `notin` ftv_mono_ty_poly sig1 ->
   ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1) [=] ftv_mono_ty_poly sig1.
 Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh_ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh : lngen.
 #[export] Hint Rewrite ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh using solve [auto] : lngen.
-
-Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh :
-forall rho1 tau1 a1,
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1) [=] ftv_mono_ty_rho rho1.
-Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_fresh_ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh : lngen.
-#[export] Hint Rewrite ftv_mono_ty_rho_subst_ty_mono_ty_rho_fresh using solve [auto] : lngen.
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_fresh_mutual :
-(forall G1 tau1 a1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1) [=] ftv_mono_ctx G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_fresh :
-forall G1 tau1 a1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1) [=] ftv_mono_ctx G1.
-Proof.
-pose proof ftv_mono_ctx_subst_ty_mono_ctx_fresh_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_subst_ty_mono_ctx_fresh : lngen.
-#[export] Hint Rewrite ftv_mono_ctx_subst_ty_mono_ctx_fresh using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -5783,13 +5168,32 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower_ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower_mutual :
-(forall sig1 tau1 a1,
-  remove a1 (ftv_mono_ty_poly sig1) [<=] ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower_mutual :
 (forall rho1 tau1 a1,
   remove a1 (ftv_mono_ty_rho rho1) [<=] ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower :
+forall rho1 tau1 a1,
+  remove a1 (ftv_mono_ty_rho rho1) [<=] ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower : lngen.
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower_mutual :
+(forall sig1 tau1 a1,
+  remove a1 (ftv_mono_ty_poly sig1) [<=] ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -5799,40 +5203,10 @@ Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower :
 forall sig1 tau1 a1,
   remove a1 (ftv_mono_ty_poly sig1) [<=] ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower_ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower : lngen.
-
-Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower :
-forall rho1 tau1 a1,
-  remove a1 (ftv_mono_ty_rho rho1) [<=] ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_lower_ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_lower : lngen.
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_lower_mutual :
-(forall G1 tau1 a1,
-  remove a1 (ftv_mono_ctx G1) [<=] ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_lower :
-forall G1 tau1 a1,
-  remove a1 (ftv_mono_ctx G1) [<=] ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof ftv_mono_ctx_subst_ty_mono_ctx_lower_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_subst_ty_mono_ctx_lower : lngen.
 
 (* begin hide *)
 
@@ -5945,17 +5319,38 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_notin_ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin_mutual :
-(forall sig1 tau1 a1 a2,
-  a2 `notin` ftv_mono_ty_poly sig1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin_mutual :
 (forall rho1 tau1 a1 a2,
   a2 `notin` ftv_mono_ty_rho rho1 ->
   a2 `notin` ftv_mono_ty_mono tau1 ->
   a2 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin :
+forall rho1 tau1 a1 a2,
+  a2 `notin` ftv_mono_ty_rho rho1 ->
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  a2 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin : lngen.
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_notin_mutual :
+(forall sig1 tau1 a1 a2,
+  a2 `notin` ftv_mono_ty_poly sig1 ->
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  a2 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -5967,46 +5362,10 @@ forall sig1 tau1 a1 a2,
   a2 `notin` ftv_mono_ty_mono tau1 ->
   a2 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_notin_ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_notin_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_subst_ty_mono_ty_poly_notin : lngen.
-
-Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin :
-forall rho1 tau1 a1 a2,
-  a2 `notin` ftv_mono_ty_rho rho1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_notin_ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_notin : lngen.
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_notin_mutual :
-(forall G1 tau1 a1 a2,
-  a2 `notin` ftv_mono_ctx G1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 `notin` ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_notin :
-forall G1 tau1 a1 a2,
-  a2 `notin` ftv_mono_ctx G1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 `notin` ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof ftv_mono_ctx_subst_ty_mono_ctx_notin_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_subst_ty_mono_ctx_notin : lngen.
 
 (* begin hide *)
 
@@ -6129,13 +5488,32 @@ Qed.
 
 (* begin hide *)
 
-Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper_ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper_mutual :
-(forall sig1 tau1 a1,
-  ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ty_poly sig1)) /\
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper_mutual :
 (forall rho1 tau1 a1,
   ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ty_rho rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp; fsetdec.
+Qed.
+
+(* end hide *)
+
+Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper :
+forall rho1 tau1 a1,
+  ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ty_rho rho1).
+Proof.
+pose proof ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper : lngen.
+
+(* begin hide *)
+
+Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper_mutual :
+(forall sig1 tau1 a1,
+  ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ty_poly sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp; fsetdec.
 Qed.
 
@@ -6145,40 +5523,10 @@ Lemma ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper :
 forall sig1 tau1 a1,
   ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ty_poly sig1).
 Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper_ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper_mutual as H; intuition eauto.
+pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper : lngen.
-
-Lemma ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper :
-forall rho1 tau1 a1,
-  ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ty_rho rho1).
-Proof.
-pose proof ftv_mono_ty_poly_subst_ty_mono_ty_poly_upper_ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ty_rho_subst_ty_mono_ty_rho_upper : lngen.
-
-(* begin hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_upper_mutual :
-(forall G1 tau1 a1,
-  ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ctx G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp; fsetdec.
-Qed.
-
-(* end hide *)
-
-Lemma ftv_mono_ctx_subst_ty_mono_ctx_upper :
-forall G1 tau1 a1,
-  ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1) [<=] ftv_mono_ty_mono tau1 `union` remove a1 (ftv_mono_ctx G1).
-Proof.
-pose proof ftv_mono_ctx_subst_ty_mono_ctx_upper_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve ftv_mono_ctx_subst_ty_mono_ctx_upper : lngen.
 
 (* begin hide *)
 
@@ -6300,19 +5648,41 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 tau1 a1 a2 n1,
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  a1 <> a2 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  subst_ty_mono_ty_poly tau1 a1 (close_ty_poly_wrt_ty_mono_rec n1 a2 sig1) = close_ty_poly_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 tau1 a1 a2 n1,
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   a1 <> a2 ->
   a2 `notin` ftv_mono_ty_mono tau1 ->
   subst_ty_mono_ty_rho tau1 a1 (close_ty_rho_wrt_ty_mono_rec n1 a2 rho1) = close_ty_rho_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec :
+forall rho1 tau1 a1 a2 n1,
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  a1 <> a2 ->
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  subst_ty_mono_ty_rho tau1 a1 (close_ty_rho_wrt_ty_mono_rec n1 a2 rho1) = close_ty_rho_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 tau1 a1 a2 n1,
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  a1 <> a2 ->
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  subst_ty_mono_ty_poly tau1 a1 (close_ty_poly_wrt_ty_mono_rec n1 a2 sig1) = close_ty_poly_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -6325,49 +5695,10 @@ forall sig1 tau1 a1 a2 n1,
   a2 `notin` ftv_mono_ty_mono tau1 ->
   subst_ty_mono_ty_poly tau1 a1 (close_ty_poly_wrt_ty_mono_rec n1 a2 sig1) = close_ty_poly_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec : lngen.
-
-Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec :
-forall rho1 tau1 a1 a2 n1,
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  a1 <> a2 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  subst_ty_mono_ty_rho tau1 a1 (close_ty_rho_wrt_ty_mono_rec n1 a2 rho1) = close_ty_rho_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 tau1 a1 a2 n1,
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  a1 <> a2 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 (close_ctx_wrt_ty_mono_rec n1 a2 G1) = close_ctx_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec :
-forall G1 tau1 a1 a2 n1,
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  a1 <> a2 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 (close_ctx_wrt_ty_mono_rec n1 a2 G1) = close_ctx_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec : lngen.
 
 (* begin hide *)
 
@@ -6480,17 +5811,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_close_ty_mono_wrt_ty_mono : lngen.
 
-Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono :
-forall sig1 tau1 a1 a2,
-  lc_ty_mono tau1 ->  a1 <> a2 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  subst_ty_mono_ty_poly tau1 a1 (close_ty_poly_wrt_ty_mono a2 sig1) = close_ty_poly_wrt_ty_mono a2 (subst_ty_mono_ty_poly tau1 a1 sig1).
-Proof.
-unfold close_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono : lngen.
-
 Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono :
 forall rho1 tau1 a1 a2,
   lc_ty_mono tau1 ->  a1 <> a2 ->
@@ -6502,16 +5822,16 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono : lngen.
 
-Lemma subst_ty_mono_ctx_close_ctx_wrt_ty_mono :
-forall G1 tau1 a1 a2,
+Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono :
+forall sig1 tau1 a1 a2,
   lc_ty_mono tau1 ->  a1 <> a2 ->
   a2 `notin` ftv_mono_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 (close_ctx_wrt_ty_mono a2 G1) = close_ctx_wrt_ty_mono a2 (subst_ty_mono_ctx tau1 a1 G1).
+  subst_ty_mono_ty_poly tau1 a1 (close_ty_poly_wrt_ty_mono a2 sig1) = close_ty_poly_wrt_ty_mono a2 (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-unfold close_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_close_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono : lngen.
 
 Lemma subst_tm_close_tm_wrt_tm :
 forall t2 t1 x1 x2,
@@ -6581,17 +5901,38 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_degree_ty_poly_wrt_ty_mono_subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono_mutual :
-(forall sig1 tau1 a1 n1,
-  degree_ty_poly_wrt_ty_mono n1 sig1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ty_poly_wrt_ty_mono n1 (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono_mutual :
 (forall rho1 tau1 a1 n1,
   degree_ty_rho_wrt_ty_mono n1 rho1 ->
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   degree_ty_rho_wrt_ty_mono n1 (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono :
+forall rho1 tau1 a1 n1,
+  degree_ty_rho_wrt_ty_mono n1 rho1 ->
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  degree_ty_rho_wrt_ty_mono n1 (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_degree_ty_poly_wrt_ty_mono_mutual :
+(forall sig1 tau1 a1 n1,
+  degree_ty_poly_wrt_ty_mono n1 sig1 ->
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  degree_ty_poly_wrt_ty_mono n1 (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -6603,46 +5944,10 @@ forall sig1 tau1 a1 n1,
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   degree_ty_poly_wrt_ty_mono n1 (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_degree_ty_poly_wrt_ty_mono_subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_degree_ty_poly_wrt_ty_mono_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_degree_ty_poly_wrt_ty_mono : lngen.
-
-Lemma subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono :
-forall rho1 tau1 a1 n1,
-  degree_ty_rho_wrt_ty_mono n1 rho1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ty_rho_wrt_ty_mono n1 (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_degree_ty_poly_wrt_ty_mono_subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_degree_ty_rho_wrt_ty_mono : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_degree_ctx_wrt_ty_mono_mutual :
-(forall G1 tau1 a1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ctx_wrt_ty_mono n1 (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_degree_ctx_wrt_ty_mono :
-forall G1 tau1 a1 n1,
-  degree_ctx_wrt_ty_mono n1 G1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  degree_ctx_wrt_ty_mono n1 (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof subst_ty_mono_ctx_degree_ctx_wrt_ty_mono_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_degree_ctx_wrt_ty_mono : lngen.
 
 (* begin hide *)
 
@@ -6768,15 +6073,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_fresh_eq_subst_ty_mono_ty_rho_fresh_eq_mutual :
-(forall sig1 tau1 a1,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  subst_ty_mono_ty_poly tau1 a1 sig1 = sig1) /\
+Lemma subst_ty_mono_ty_rho_fresh_eq_mutual :
 (forall rho1 tau1 a1,
   a1 `notin` ftv_mono_ty_rho rho1 ->
   subst_ty_mono_ty_rho tau1 a1 rho1 = rho1).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_fresh_eq :
+forall rho1 tau1 a1,
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  subst_ty_mono_ty_rho tau1 a1 rho1 = rho1.
+Proof.
+pose proof subst_ty_mono_ty_rho_fresh_eq_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_fresh_eq : lngen.
+#[export] Hint Rewrite subst_ty_mono_ty_rho_fresh_eq using solve [auto] : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_fresh_eq_mutual :
+(forall sig1 tau1 a1,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  subst_ty_mono_ty_poly tau1 a1 sig1 = sig1).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -6787,46 +6113,11 @@ forall sig1 tau1 a1,
   a1 `notin` ftv_mono_ty_poly sig1 ->
   subst_ty_mono_ty_poly tau1 a1 sig1 = sig1.
 Proof.
-pose proof subst_ty_mono_ty_poly_fresh_eq_subst_ty_mono_ty_rho_fresh_eq_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_fresh_eq_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_fresh_eq : lngen.
 #[export] Hint Rewrite subst_ty_mono_ty_poly_fresh_eq using solve [auto] : lngen.
-
-Lemma subst_ty_mono_ty_rho_fresh_eq :
-forall rho1 tau1 a1,
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  subst_ty_mono_ty_rho tau1 a1 rho1 = rho1.
-Proof.
-pose proof subst_ty_mono_ty_poly_fresh_eq_subst_ty_mono_ty_rho_fresh_eq_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_fresh_eq : lngen.
-#[export] Hint Rewrite subst_ty_mono_ty_rho_fresh_eq using solve [auto] : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_fresh_eq_mutual :
-(forall G1 tau1 a1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  subst_ty_mono_ctx tau1 a1 G1 = G1).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_fresh_eq :
-forall G1 tau1 a1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  subst_ty_mono_ctx tau1 a1 G1 = G1.
-Proof.
-pose proof subst_ty_mono_ctx_fresh_eq_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_fresh_eq : lngen.
-#[export] Hint Rewrite subst_ty_mono_ctx_fresh_eq using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -6901,15 +6192,35 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_fresh_same_subst_ty_mono_ty_rho_fresh_same_mutual :
-(forall sig1 tau1 a1,
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma subst_ty_mono_ty_rho_fresh_same_mutual :
 (forall rho1 tau1 a1,
   a1 `notin` ftv_mono_ty_mono tau1 ->
   a1 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_fresh_same :
+forall rho1 tau1 a1,
+  a1 `notin` ftv_mono_ty_mono tau1 ->
+  a1 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_fresh_same_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_fresh_same : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_fresh_same_mutual :
+(forall sig1 tau1 a1,
+  a1 `notin` ftv_mono_ty_mono tau1 ->
+  a1 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -6920,43 +6231,10 @@ forall sig1 tau1 a1,
   a1 `notin` ftv_mono_ty_mono tau1 ->
   a1 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_fresh_same_subst_ty_mono_ty_rho_fresh_same_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_fresh_same_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_fresh_same : lngen.
-
-Lemma subst_ty_mono_ty_rho_fresh_same :
-forall rho1 tau1 a1,
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_fresh_same_subst_ty_mono_ty_rho_fresh_same_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_fresh_same : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_fresh_same_mutual :
-(forall G1 tau1 a1,
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_fresh_same :
-forall G1 tau1 a1,
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ctx (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof subst_ty_mono_ctx_fresh_same_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_fresh_same : lngen.
 
 (* begin hide *)
 
@@ -7031,17 +6309,38 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_fresh_subst_ty_mono_ty_rho_fresh_mutual :
-(forall sig1 tau1 a1 a2,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a2 sig1)) /\
+Lemma subst_ty_mono_ty_rho_fresh_mutual :
 (forall rho1 tau1 a1 a2,
   a1 `notin` ftv_mono_ty_rho rho1 ->
   a1 `notin` ftv_mono_ty_mono tau1 ->
   a1 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a2 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_fresh :
+forall rho1 tau1 a1 a2,
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  a1 `notin` ftv_mono_ty_mono tau1 ->
+  a1 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a2 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_fresh_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_fresh : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_fresh_mutual :
+(forall sig1 tau1 a1 a2,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  a1 `notin` ftv_mono_ty_mono tau1 ->
+  a1 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a2 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -7053,46 +6352,10 @@ forall sig1 tau1 a1 a2,
   a1 `notin` ftv_mono_ty_mono tau1 ->
   a1 `notin` ftv_mono_ty_poly (subst_ty_mono_ty_poly tau1 a2 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_fresh_subst_ty_mono_ty_rho_fresh_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_fresh_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_fresh : lngen.
-
-Lemma subst_ty_mono_ty_rho_fresh :
-forall rho1 tau1 a1 a2,
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ty_rho (subst_ty_mono_ty_rho tau1 a2 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_fresh_subst_ty_mono_ty_rho_fresh_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_fresh : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_fresh_mutual :
-(forall G1 tau1 a1 a2,
-  a1 `notin` ftv_mono_ctx G1 ->
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ctx (subst_ty_mono_ctx tau1 a2 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_fresh :
-forall G1 tau1 a1 a2,
-  a1 `notin` ftv_mono_ctx G1 ->
-  a1 `notin` ftv_mono_ty_mono tau1 ->
-  a1 `notin` ftv_mono_ctx (subst_ty_mono_ctx tau1 a2 G1).
-Proof.
-pose proof subst_ty_mono_ctx_fresh_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_fresh : lngen.
 
 (* begin hide *)
 
@@ -7155,17 +6418,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_lc_ty_mono : lngen.
 
-Lemma subst_ty_mono_ty_poly_lc_ty_poly :
-forall sig1 tau1 a1,
-  lc_ty_poly sig1 ->
-  lc_ty_mono tau1 ->
-  lc_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1).
-Proof.
-default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_lc_ty_poly : lngen.
-
 Lemma subst_ty_mono_ty_rho_lc_ty_rho :
 forall rho1 tau1 a1,
   lc_ty_rho rho1 ->
@@ -7177,16 +6429,16 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_lc_ty_rho : lngen.
 
-Lemma subst_ty_mono_ctx_lc_ctx :
-forall G1 tau1 a1,
-  lc_ctx G1 ->
+Lemma subst_ty_mono_ty_poly_lc_ty_poly :
+forall sig1 tau1 a1,
+  lc_ty_poly sig1 ->
   lc_ty_mono tau1 ->
-  lc_ctx (subst_ty_mono_ctx tau1 a1 G1).
+  lc_ty_poly (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
 default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_lc_ctx : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_lc_ty_poly : lngen.
 
 Lemma subst_tm_lc_tm :
 forall t1 t2 x1,
@@ -7239,15 +6491,39 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 tau1 tau2 a1 n1,
-  lc_ty_mono tau1 ->
-  subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 tau2 sig1) = open_ty_poly_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 tau1 tau2 a1 n1,
   lc_ty_mono tau1 ->
   subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 tau2 rho1) = open_ty_rho_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec :
+forall rho1 tau1 tau2 a1 n1,
+  lc_ty_mono tau1 ->
+  subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 tau2 rho1) = open_ty_rho_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 tau1 tau2 a1 n1,
+  lc_ty_mono tau1 ->
+  subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 tau2 sig1) = open_ty_poly_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -7260,51 +6536,10 @@ forall sig1 tau1 tau2 a1 n1,
   lc_ty_mono tau1 ->
   subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 tau2 sig1) = open_ty_poly_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec :
-forall rho1 tau1 tau2 a1 n1,
-  lc_ty_mono tau1 ->
-  subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 tau2 rho1) = open_ty_rho_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_open_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 tau1 tau2 a1 n1,
-  lc_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono_rec n1 tau2 G1) = open_ctx_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_open_ctx_wrt_ty_mono_rec :
-forall G1 tau1 tau2 a1 n1,
-  lc_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono_rec n1 tau2 G1) = open_ctx_wrt_ty_mono_rec n1 (subst_ty_mono_ty_mono tau1 a1 tau2) (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof subst_ty_mono_ctx_open_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_open_ctx_wrt_ty_mono_rec : lngen.
 
 (* end hide *)
 
@@ -7424,16 +6659,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_open_ty_mono_wrt_ty_mono : lngen.
 
-Lemma subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono :
-forall sig1 tau1 tau2 a1,
-  lc_ty_mono tau1 ->
-  subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 tau2) = open_ty_poly_wrt_ty_mono (subst_ty_mono_ty_poly tau1 a1 sig1) (subst_ty_mono_ty_mono tau1 a1 tau2).
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono : lngen.
-
 Lemma subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono :
 forall rho1 tau1 tau2 a1,
   lc_ty_mono tau1 ->
@@ -7444,15 +6669,15 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono : lngen.
 
-Lemma subst_ty_mono_ctx_open_ctx_wrt_ty_mono :
-forall G1 tau1 tau2 a1,
+Lemma subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono :
+forall sig1 tau1 tau2 a1,
   lc_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono G1 tau2) = open_ctx_wrt_ty_mono (subst_ty_mono_ctx tau1 a1 G1) (subst_ty_mono_ty_mono tau1 a1 tau2).
+  subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 tau2) = open_ty_poly_wrt_ty_mono (subst_ty_mono_ty_poly tau1 a1 sig1) (subst_ty_mono_ty_mono tau1 a1 tau2).
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_open_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono : lngen.
 
 Lemma subst_tm_open_tm_wrt_tm :
 forall t3 t1 t2 x1,
@@ -7504,17 +6729,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_open_ty_mono_wrt_ty_mono_var : lngen.
 
-Lemma subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_var :
-forall sig1 tau1 a1 a2,
-  a1 <> a2 ->
-  lc_ty_mono tau1 ->
-  open_ty_poly_wrt_ty_mono (subst_ty_mono_ty_poly tau1 a1 sig1) (ty_mono_var_f a2) = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a2)).
-Proof.
-intros; rewrite subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_var : lngen.
-
 Lemma subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_var :
 forall rho1 tau1 a1 a2,
   a1 <> a2 ->
@@ -7526,16 +6740,16 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_open_ty_rho_wrt_ty_mono_var : lngen.
 
-Lemma subst_ty_mono_ctx_open_ctx_wrt_ty_mono_var :
-forall G1 tau1 a1 a2,
+Lemma subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_var :
+forall sig1 tau1 a1 a2,
   a1 <> a2 ->
   lc_ty_mono tau1 ->
-  open_ctx_wrt_ty_mono (subst_ty_mono_ctx tau1 a1 G1) (ty_mono_var_f a2) = subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono G1 (ty_mono_var_f a2)).
+  open_ty_poly_wrt_ty_mono (subst_ty_mono_ty_poly tau1 a1 sig1) (ty_mono_var_f a2) = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a2)).
 Proof.
-intros; rewrite subst_ty_mono_ctx_open_ctx_wrt_ty_mono; default_simp.
+intros; rewrite subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_open_ctx_wrt_ty_mono_var : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono_var : lngen.
 
 Lemma subst_tm_open_tm_wrt_tm_var :
 forall t2 t1 x1 x2,
@@ -7605,13 +6819,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_spec_rec_subst_ty_mono_ty_rho_spec_rec_mutual :
-(forall sig1 tau1 a1 n1,
-  subst_ty_mono_ty_poly tau1 a1 sig1 = open_ty_poly_wrt_ty_mono_rec n1 tau1 (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1)) /\
+Lemma subst_ty_mono_ty_rho_spec_rec_mutual :
 (forall rho1 tau1 a1 n1,
   subst_ty_mono_ty_rho tau1 a1 rho1 = open_ty_rho_wrt_ty_mono_rec n1 tau1 (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_rho_spec_rec :
+forall rho1 tau1 a1 n1,
+  subst_ty_mono_ty_rho tau1 a1 rho1 = open_ty_rho_wrt_ty_mono_rec n1 tau1 (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_spec_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_spec_rec : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_spec_rec_mutual :
+(forall sig1 tau1 a1 n1,
+  subst_ty_mono_ty_poly tau1 a1 sig1 = open_ty_poly_wrt_ty_mono_rec n1 tau1 (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -7623,48 +6860,10 @@ Lemma subst_ty_mono_ty_poly_spec_rec :
 forall sig1 tau1 a1 n1,
   subst_ty_mono_ty_poly tau1 a1 sig1 = open_ty_poly_wrt_ty_mono_rec n1 tau1 (close_ty_poly_wrt_ty_mono_rec n1 a1 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_spec_rec_subst_ty_mono_ty_rho_spec_rec_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_spec_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_spec_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ty_rho_spec_rec :
-forall rho1 tau1 a1 n1,
-  subst_ty_mono_ty_rho tau1 a1 rho1 = open_ty_rho_wrt_ty_mono_rec n1 tau1 (close_ty_rho_wrt_ty_mono_rec n1 a1 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_spec_rec_subst_ty_mono_ty_rho_spec_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_spec_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_spec_rec_mutual :
-(forall G1 tau1 a1 n1,
-  subst_ty_mono_ctx tau1 a1 G1 = open_ctx_wrt_ty_mono_rec n1 tau1 (close_ctx_wrt_ty_mono_rec n1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_spec_rec :
-forall G1 tau1 a1 n1,
-  subst_ty_mono_ctx tau1 a1 G1 = open_ctx_wrt_ty_mono_rec n1 tau1 (close_ctx_wrt_ty_mono_rec n1 a1 G1).
-Proof.
-pose proof subst_ty_mono_ctx_spec_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_spec_rec : lngen.
 
 (* end hide *)
 
@@ -7727,15 +6926,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_spec : lngen.
 
-Lemma subst_ty_mono_ty_poly_spec :
-forall sig1 tau1 a1,
-  subst_ty_mono_ty_poly tau1 a1 sig1 = open_ty_poly_wrt_ty_mono (close_ty_poly_wrt_ty_mono a1 sig1) tau1.
-Proof.
-unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_spec : lngen.
-
 Lemma subst_ty_mono_ty_rho_spec :
 forall rho1 tau1 a1,
   subst_ty_mono_ty_rho tau1 a1 rho1 = open_ty_rho_wrt_ty_mono (close_ty_rho_wrt_ty_mono a1 rho1) tau1.
@@ -7745,14 +6935,14 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_spec : lngen.
 
-Lemma subst_ty_mono_ctx_spec :
-forall G1 tau1 a1,
-  subst_ty_mono_ctx tau1 a1 G1 = open_ctx_wrt_ty_mono (close_ctx_wrt_ty_mono a1 G1) tau1.
+Lemma subst_ty_mono_ty_poly_spec :
+forall sig1 tau1 a1,
+  subst_ty_mono_ty_poly tau1 a1 sig1 = open_ty_poly_wrt_ty_mono (close_ty_poly_wrt_ty_mono a1 sig1) tau1.
 Proof.
-unfold close_ctx_wrt_ty_mono; unfold open_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_spec : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_spec : lngen.
 
 Lemma subst_tm_spec :
 forall t1 t2 x1,
@@ -7799,17 +6989,38 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_subst_ty_mono_ty_poly_subst_ty_mono_ty_rho_subst_ty_mono_ty_rho_mutual :
-(forall sig1 tau1 tau2 a2 a1,
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  subst_ty_mono_ty_poly tau1 a1 (subst_ty_mono_ty_poly tau2 a2 sig1) = subst_ty_mono_ty_poly (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ty_poly tau1 a1 sig1)) /\
+Lemma subst_ty_mono_ty_rho_subst_ty_mono_ty_rho_mutual :
 (forall rho1 tau1 tau2 a2 a1,
   a2 `notin` ftv_mono_ty_mono tau1 ->
   a2 <> a1 ->
   subst_ty_mono_ty_rho tau1 a1 (subst_ty_mono_ty_rho tau2 a2 rho1) = subst_ty_mono_ty_rho (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ty_rho tau1 a1 rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_subst_ty_mono_ty_rho :
+forall rho1 tau1 tau2 a2 a1,
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  a2 <> a1 ->
+  subst_ty_mono_ty_rho tau1 a1 (subst_ty_mono_ty_rho tau2 a2 rho1) = subst_ty_mono_ty_rho (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ty_rho tau1 a1 rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_subst_ty_mono_ty_rho_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_subst_ty_mono_ty_rho : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_subst_ty_mono_ty_poly_mutual :
+(forall sig1 tau1 tau2 a2 a1,
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  a2 <> a1 ->
+  subst_ty_mono_ty_poly tau1 a1 (subst_ty_mono_ty_poly tau2 a2 sig1) = subst_ty_mono_ty_poly (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ty_poly tau1 a1 sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -7821,46 +7032,10 @@ forall sig1 tau1 tau2 a2 a1,
   a2 <> a1 ->
   subst_ty_mono_ty_poly tau1 a1 (subst_ty_mono_ty_poly tau2 a2 sig1) = subst_ty_mono_ty_poly (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ty_poly tau1 a1 sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_subst_ty_mono_ty_poly_subst_ty_mono_ty_rho_subst_ty_mono_ty_rho_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_subst_ty_mono_ty_poly_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_subst_ty_mono_ty_poly : lngen.
-
-Lemma subst_ty_mono_ty_rho_subst_ty_mono_ty_rho :
-forall rho1 tau1 tau2 a2 a1,
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  subst_ty_mono_ty_rho tau1 a1 (subst_ty_mono_ty_rho tau2 a2 rho1) = subst_ty_mono_ty_rho (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ty_rho tau1 a1 rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_subst_ty_mono_ty_poly_subst_ty_mono_ty_rho_subst_ty_mono_ty_rho_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_subst_ty_mono_ty_rho : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_subst_ty_mono_ctx_mutual :
-(forall G1 tau1 tau2 a2 a1,
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  subst_ty_mono_ctx tau1 a1 (subst_ty_mono_ctx tau2 a2 G1) = subst_ty_mono_ctx (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ctx tau1 a1 G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_subst_ty_mono_ctx :
-forall G1 tau1 tau2 a2 a1,
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  subst_ty_mono_ctx tau1 a1 (subst_ty_mono_ctx tau2 a2 G1) = subst_ty_mono_ctx (subst_ty_mono_ty_mono tau1 a1 tau2) a2 (subst_ty_mono_ctx tau1 a1 G1).
-Proof.
-pose proof subst_ty_mono_ctx_subst_ty_mono_ctx_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_subst_ty_mono_ctx : lngen.
 
 (* begin hide *)
 
@@ -7991,13 +7166,7 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual :
-(forall sig1 tau1 a1 a2 n1,
-  a2 `notin` ftv_mono_ty_poly sig1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  subst_ty_mono_ty_poly tau1 a1 sig1 = close_ty_poly_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a2) sig1))) *
+Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual :
 (forall rho1 tau1 a1 a2 n1,
   a2 `notin` ftv_mono_ty_rho rho1 ->
   a2 `notin` ftv_mono_ty_mono tau1 ->
@@ -8005,7 +7174,40 @@ Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mo
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   subst_ty_mono_ty_rho tau1 a1 rho1 = close_ty_rho_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a2) rho1))).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutrec;
+apply_mutual_ind ty_rho_mutrec;
+default_simp.
+Qed.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec :
+forall rho1 tau1 a1 a2 n1,
+  a2 `notin` ftv_mono_ty_rho rho1 ->
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  a2 <> a1 ->
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  subst_ty_mono_ty_rho tau1 a1 rho1 = close_ty_rho_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a2) rho1)).
+Proof.
+pose proof subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec : lngen.
+
+(* end hide *)
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_mutual :
+(forall sig1 tau1 a1 a2 n1,
+  a2 `notin` ftv_mono_ty_poly sig1 ->
+  a2 `notin` ftv_mono_ty_mono tau1 ->
+  a2 <> a1 ->
+  degree_ty_mono_wrt_ty_mono n1 tau1 ->
+  subst_ty_mono_ty_poly tau1 a1 sig1 = close_ty_poly_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a2) sig1))).
+Proof.
+apply_mutual_ind ty_poly_mutrec;
 default_simp.
 Qed.
 
@@ -8021,60 +7223,10 @@ forall sig1 tau1 a1 a2 n1,
   degree_ty_mono_wrt_ty_mono n1 tau1 ->
   subst_ty_mono_ty_poly tau1 a1 sig1 = close_ty_poly_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a2) sig1)).
 Proof.
-pose proof subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec :
-forall rho1 tau1 a1 a2 n1,
-  a2 `notin` ftv_mono_ty_rho rho1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  subst_ty_mono_ty_rho tau1 a1 rho1 = close_ty_rho_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a2) rho1)).
-Proof.
-pose proof subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_rec_open_ty_poly_wrt_ty_mono_rec_subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_rec_open_ty_rho_wrt_ty_mono_rec : lngen.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec_mutual :
-(forall G1 tau1 a1 a2 n1,
-  a2 `notin` ftv_mono_ctx G1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  subst_ty_mono_ctx tau1 a1 G1 = close_ctx_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a2) G1))).
-Proof.
-apply_mutual_ind ctx_mutrec;
-default_simp.
-Qed.
-
-(* end hide *)
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec :
-forall G1 tau1 a1 a2 n1,
-  a2 `notin` ftv_mono_ctx G1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  degree_ty_mono_wrt_ty_mono n1 tau1 ->
-  subst_ty_mono_ctx tau1 a1 G1 = close_ctx_wrt_ty_mono_rec n1 a2 (subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a2) G1)).
-Proof.
-pose proof subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_close_ctx_wrt_ty_mono_rec_open_ctx_wrt_ty_mono_rec : lngen.
 
 (* end hide *)
 
@@ -8215,19 +7367,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_close_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono : lngen.
 
-Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono :
-forall sig1 tau1 a1 a2,
-  a2 `notin` ftv_mono_ty_poly sig1 ->
-  a2 `notin` ftv_mono_ty_mono tau1 ->
-  a2 <> a1 ->
-  lc_ty_mono tau1 ->
-  subst_ty_mono_ty_poly tau1 a1 sig1 = close_ty_poly_wrt_ty_mono a2 (subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a2))).
-Proof.
-unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono : lngen.
-
 Lemma subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono :
 forall rho1 tau1 a1 a2,
   a2 `notin` ftv_mono_ty_rho rho1 ->
@@ -8241,18 +7380,18 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_close_ty_rho_wrt_ty_mono_open_ty_rho_wrt_ty_mono : lngen.
 
-Lemma subst_ty_mono_ctx_close_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono :
-forall G1 tau1 a1 a2,
-  a2 `notin` ftv_mono_ctx G1 ->
+Lemma subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono :
+forall sig1 tau1 a1 a2,
+  a2 `notin` ftv_mono_ty_poly sig1 ->
   a2 `notin` ftv_mono_ty_mono tau1 ->
   a2 <> a1 ->
   lc_ty_mono tau1 ->
-  subst_ty_mono_ctx tau1 a1 G1 = close_ctx_wrt_ty_mono a2 (subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono G1 (ty_mono_var_f a2))).
+  subst_ty_mono_ty_poly tau1 a1 sig1 = close_ty_poly_wrt_ty_mono a2 (subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a2))).
 Proof.
-unfold close_ctx_wrt_ty_mono; unfold open_ctx_wrt_ty_mono; default_simp.
+unfold close_ty_poly_wrt_ty_mono; unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_close_ctx_wrt_ty_mono_open_ctx_wrt_ty_mono : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_close_ty_poly_wrt_ty_mono_open_ty_poly_wrt_ty_mono : lngen.
 
 Lemma subst_tm_close_tm_wrt_tm_open_tm_wrt_tm :
 forall t2 t1 x1 x2,
@@ -8406,15 +7545,36 @@ Qed.
 
 (* begin hide *)
 
-Lemma subst_ty_mono_ty_poly_intro_rec_subst_ty_mono_ty_rho_intro_rec_mutual :
-(forall sig1 a1 tau1 n1,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1 = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1)) /\
+Lemma subst_ty_mono_ty_rho_intro_rec_mutual :
 (forall rho1 a1 tau1 n1,
   a1 `notin` ftv_mono_ty_rho rho1 ->
   open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1 = subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1)).
 Proof.
-apply_mutual_ind ty_poly_ty_rho_mutind;
+apply_mutual_ind ty_rho_mutind;
+default_simp.
+Qed.
+
+(* end hide *)
+
+Lemma subst_ty_mono_ty_rho_intro_rec :
+forall rho1 a1 tau1 n1,
+  a1 `notin` ftv_mono_ty_rho rho1 ->
+  open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1 = subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1).
+Proof.
+pose proof subst_ty_mono_ty_rho_intro_rec_mutual as H; intuition eauto.
+Qed.
+
+#[export] Hint Resolve subst_ty_mono_ty_rho_intro_rec : lngen.
+#[export] Hint Rewrite subst_ty_mono_ty_rho_intro_rec using solve [auto] : lngen.
+
+(* begin hide *)
+
+Lemma subst_ty_mono_ty_poly_intro_rec_mutual :
+(forall sig1 a1 tau1 n1,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1 = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1)).
+Proof.
+apply_mutual_ind ty_poly_mutind;
 default_simp.
 Qed.
 
@@ -8425,46 +7585,11 @@ forall sig1 a1 tau1 n1,
   a1 `notin` ftv_mono_ty_poly sig1 ->
   open_ty_poly_wrt_ty_mono_rec n1 tau1 sig1 = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono_rec n1 (ty_mono_var_f a1) sig1).
 Proof.
-pose proof subst_ty_mono_ty_poly_intro_rec_subst_ty_mono_ty_rho_intro_rec_mutual as H; intuition eauto.
+pose proof subst_ty_mono_ty_poly_intro_rec_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_poly_intro_rec : lngen.
 #[export] Hint Rewrite subst_ty_mono_ty_poly_intro_rec using solve [auto] : lngen.
-
-Lemma subst_ty_mono_ty_rho_intro_rec :
-forall rho1 a1 tau1 n1,
-  a1 `notin` ftv_mono_ty_rho rho1 ->
-  open_ty_rho_wrt_ty_mono_rec n1 tau1 rho1 = subst_ty_mono_ty_rho tau1 a1 (open_ty_rho_wrt_ty_mono_rec n1 (ty_mono_var_f a1) rho1).
-Proof.
-pose proof subst_ty_mono_ty_poly_intro_rec_subst_ty_mono_ty_rho_intro_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_rho_intro_rec : lngen.
-#[export] Hint Rewrite subst_ty_mono_ty_rho_intro_rec using solve [auto] : lngen.
-
-(* begin hide *)
-
-Lemma subst_ty_mono_ctx_intro_rec_mutual :
-(forall G1 a1 tau1 n1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  open_ctx_wrt_ty_mono_rec n1 tau1 G1 = subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1)).
-Proof.
-apply_mutual_ind ctx_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma subst_ty_mono_ctx_intro_rec :
-forall G1 a1 tau1 n1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  open_ctx_wrt_ty_mono_rec n1 tau1 G1 = subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono_rec n1 (ty_mono_var_f a1) G1).
-Proof.
-pose proof subst_ty_mono_ctx_intro_rec_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ctx_intro_rec : lngen.
-#[export] Hint Rewrite subst_ty_mono_ctx_intro_rec using solve [auto] : lngen.
 
 (* begin hide *)
 
@@ -8524,16 +7649,6 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_mono_intro : lngen.
 
-Lemma subst_ty_mono_ty_poly_intro :
-forall a1 sig1 tau1,
-  a1 `notin` ftv_mono_ty_poly sig1 ->
-  open_ty_poly_wrt_ty_mono sig1 tau1 = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)).
-Proof.
-unfold open_ty_poly_wrt_ty_mono; default_simp.
-Qed.
-
-#[export] Hint Resolve subst_ty_mono_ty_poly_intro : lngen.
-
 Lemma subst_ty_mono_ty_rho_intro :
 forall a1 rho1 tau1,
   a1 `notin` ftv_mono_ty_rho rho1 ->
@@ -8544,15 +7659,15 @@ Qed.
 
 #[export] Hint Resolve subst_ty_mono_ty_rho_intro : lngen.
 
-Lemma subst_ty_mono_ctx_intro :
-forall a1 G1 tau1,
-  a1 `notin` ftv_mono_ctx G1 ->
-  open_ctx_wrt_ty_mono G1 tau1 = subst_ty_mono_ctx tau1 a1 (open_ctx_wrt_ty_mono G1 (ty_mono_var_f a1)).
+Lemma subst_ty_mono_ty_poly_intro :
+forall a1 sig1 tau1,
+  a1 `notin` ftv_mono_ty_poly sig1 ->
+  open_ty_poly_wrt_ty_mono sig1 tau1 = subst_ty_mono_ty_poly tau1 a1 (open_ty_poly_wrt_ty_mono sig1 (ty_mono_var_f a1)).
 Proof.
-unfold open_ctx_wrt_ty_mono; default_simp.
+unfold open_ty_poly_wrt_ty_mono; default_simp.
 Qed.
 
-#[export] Hint Resolve subst_ty_mono_ctx_intro : lngen.
+#[export] Hint Resolve subst_ty_mono_ty_poly_intro : lngen.
 
 Lemma subst_tm_intro :
 forall x1 t1 t2,

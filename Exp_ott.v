@@ -7,8 +7,8 @@ Require Export Metalib.LibLNgen.
 
 (** syntax *)
 Definition tmvar : Set := var. (*r variables *)
-Definition tyvar : Set := var. (*r type variables *)
 Definition integer : Set := nat.
+Definition tyvar : Set := var. (*r type variables *)
 
 Inductive ty_mono : Set :=  (*r Monotypes *)
  | ty_mono_base : ty_mono

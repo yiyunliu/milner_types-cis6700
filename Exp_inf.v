@@ -74,7 +74,7 @@ Fixpoint size_ty_poly (sig1 : ty_poly) {struct sig1} : nat :=
 
 Fixpoint size_tm (t1 : tm) {struct t1} : nat :=
   match t1 with
-    | exp_lit => 1
+    | exp_lit i1 => 1
     | exp_var_f x1 => 1
     | exp_var_b n1 => 1
     | exp_abs t2 => 1 + (size_tm t2)
@@ -135,8 +135,8 @@ Combined Scheme degree_ty_poly_wrt_ty_mono_mutind from degree_ty_poly_wrt_ty_mon
 #[export] Hint Constructors degree_ty_poly_wrt_ty_mono : core lngen.
 
 Inductive degree_tm_wrt_tm : nat -> tm -> Prop :=
-  | degree_wrt_tm_exp_lit : forall n1,
-    degree_tm_wrt_tm n1 (exp_lit)
+  | degree_wrt_tm_exp_lit : forall n1 i1,
+    degree_tm_wrt_tm n1 (exp_lit i1)
   | degree_wrt_tm_exp_var_f : forall n1 x1,
     degree_tm_wrt_tm n1 (exp_var_f x1)
   | degree_wrt_tm_exp_var_b : forall n1 n2,
@@ -161,8 +161,8 @@ Inductive degree_tm_wrt_tm : nat -> tm -> Prop :=
     degree_tm_wrt_tm n1 (exp_type_anno t1 sig1).
 
 Inductive degree_tm_wrt_ty_mono : nat -> tm -> Prop :=
-  | degree_wrt_ty_mono_exp_lit : forall n1,
-    degree_tm_wrt_ty_mono n1 (exp_lit)
+  | degree_wrt_ty_mono_exp_lit : forall n1 i1,
+    degree_tm_wrt_ty_mono n1 (exp_lit i1)
   | degree_wrt_ty_mono_exp_var_f : forall n1 x1,
     degree_tm_wrt_ty_mono n1 (exp_var_f x1)
   | degree_wrt_ty_mono_exp_var_b : forall n1 n2,
@@ -275,8 +275,8 @@ Combined Scheme lc_set_ty_poly_mutrec from lc_set_ty_poly_rec'.
 #[export] Hint Constructors lc_set_ty_poly : core lngen.
 
 Inductive lc_set_tm : tm -> Set :=
-  | lc_set_exp_lit :
-    lc_set_tm (exp_lit)
+  | lc_set_exp_lit : forall i1,
+    lc_set_tm (exp_lit i1)
   | lc_set_exp_var_f : forall x1,
     lc_set_tm (exp_var_f x1)
   | lc_set_exp_abs : forall t1,

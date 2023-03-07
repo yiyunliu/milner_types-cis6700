@@ -11,13 +11,16 @@ metavar tmvar {{ tex \text{Term variables} }}, x, y, z ::=
   {{ com variables }}
   {{ lex alphanum }}
 
+metavar integer {{ tex \text{Integer} }}, i ::=
+  {{ coq nat }}
+
 metavar tyvar {{ tex \text{Type variables} }}, a, b ::=
   {{ repr-locally-nameless }}
   {{ com type variables }}
   {{ lex alphanum }}
 
-indexvar integer {{ tex \text{Integers} }}, i ::=
-  {{ coq nat }}
+% indexvar integer {{ tex \text{Integers} }}, i ::=
+%   {{ coq nat }}
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% GRAMMAR

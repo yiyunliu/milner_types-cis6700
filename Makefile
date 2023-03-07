@@ -1,8 +1,8 @@
 all: lngen ott coq
 
 coq: Exp_ott.v Exp_inf.v
-	coqc Exp_ott.v
-	coqc Exp_inf.v
+	coqc -Q . Exp Exp_ott.v
+	coqc -Q . Exp Exp_inf.v
 
 Exp_inf.v: lngen
 lngen: Exp.ott

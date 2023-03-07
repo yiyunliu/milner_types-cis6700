@@ -1,8 +1,13 @@
-all: lngen ott coq
+EXP_FOLDER = Exp
+
+all: ott lngen adjust coq
 
 coq: Exp_ott.v Exp_inf.v
-	coqc -Q . Exp Exp_ott.v
-	coqc -Q . Exp Exp_inf.v
+	coqc -Q . $(EXP_FOLDER) Exp_ott.v
+	coqc -Q . $(EXP_FOLDER) Exp_inf.v
+
+adjust: Exp_inf.v
+	sed -i".original" -e /Require\ Export\ $(EXP_FOLDER)/s/^/From\ $(EXP_FOLDER)\ / Exp_inf.v
 
 Exp_inf.v: lngen
 lngen: Exp.ott

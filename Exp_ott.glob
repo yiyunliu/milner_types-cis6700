@@ -6,9 +6,9 @@ R131:134 Coq.Lists.List <> <> lib
 R152:168 Ott.ott_list_core <> <> lib
 R186:201 Metalib.LibLNgen <> <> lib
 def 231:235 <> tmvar
-R246:248 Metalib.Metatheory <> var abbrev
+R246:248 Metalib.Metatheory <> var syndef
 def 279:283 <> tyvar
-R294:296 Metalib.Metatheory <> var abbrev
+R294:296 Metalib.Metatheory <> var syndef
 def 332:338 <> integer
 R349:351 Coq.Init.Datatypes <> nat ind
 ind 365:371 <> ty_mono
@@ -72,7 +72,7 @@ binder 1100:1102 <> sig:29
 def 1149:1151 <> ctx
 R1162:1165 Coq.Init.Datatypes <> list ind
 R1173:1175 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
-R1169:1172 Metalib.MetatheoryAtom <> atom abbrev
+R1169:1172 Metalib.MetatheoryAtom <> atom syndef
 R1176:1182 Exp_ott <> ty_poly ind
 def 1308:1321 <> is_value_of_tm
 R1327:1328 Exp_ott <> tm ind
@@ -358,7 +358,7 @@ R5061:5063 Exp_ott <> rho:76 var
 R5075:5084 Exp_ott <> lc_ty_poly:74 ind
 R5087:5097 Exp_ott <> ty_poly_rho constr
 R5099:5101 Exp_ott <> rho:76 var
-R5140:5143 Metalib.Metatheory <> vars abbrev
+R5140:5143 Metalib.Metatheory <> vars syndef
 binder 5138:5138 <> L:77
 R5151:5157 Exp_ott <> ty_poly ind
 binder 5147:5149 <> sig:78
@@ -398,7 +398,7 @@ binder 5470:5470 <> x:83
 R5486:5490 Exp_ott <> lc_tm:80 ind
 R5493:5501 Exp_ott <> exp_var_f constr
 R5503:5503 Exp_ott <> x:83 var
-R5533:5536 Metalib.Metatheory <> vars abbrev
+R5533:5536 Metalib.Metatheory <> vars syndef
 binder 5531:5531 <> L:84
 R5542:5543 Exp_ott <> tm ind
 binder 5540:5540 <> t:85
@@ -434,7 +434,7 @@ R5731:5735 Exp_ott <> lc_tm:80 ind
 R5738:5744 Exp_ott <> exp_app constr
 R5746:5746 Exp_ott <> t:87 var
 R5748:5748 Exp_ott <> u:88 var
-R5784:5787 Metalib.Metatheory <> vars abbrev
+R5784:5787 Metalib.Metatheory <> vars syndef
 binder 5782:5782 <> L:89
 R5795:5801 Exp_ott <> ty_poly ind
 binder 5791:5793 <> sig:90
@@ -461,7 +461,7 @@ R5927:5931 Exp_ott <> lc_tm:80 ind
 R5934:5946 Exp_ott <> exp_typed_abs constr
 R5948:5950 Exp_ott <> sig:90 var
 R5952:5952 Exp_ott <> t:91 var
-R5982:5985 Metalib.Metatheory <> vars abbrev
+R5982:5985 Metalib.Metatheory <> vars syndef
 binder 5980:5980 <> L:93
 R5993:5994 Exp_ott <> tm ind
 binder 5989:5989 <> u:94
@@ -507,7 +507,7 @@ R6250:6252 Exp_ott <> sig:98 var
 def 6288:6303 <> ftv_mono_ty_mono
 R6312:6318 Exp_ott <> ty_mono ind
 binder 6306:6310 <> tau_5:99
-R6323:6326 Metalib.Metatheory <> vars abbrev
+R6323:6326 Metalib.Metatheory <> vars syndef
 R6339:6343 Exp_ott <> tau_5:99 var
 R6354:6365 Exp_ott <> ty_mono_base constr
 R6370:6371 Metalib.Metatheory <> ::set_scope:'{}' not
@@ -526,14 +526,14 @@ R6494:6509 Exp_ott <> ftv_mono_ty_mono:100 def
 def 6534:6548 <> ftv_mono_ty_rho
 R6556:6561 Exp_ott <> ty_rho ind
 binder 6551:6554 <> rho5:102
-R6566:6569 Metalib.Metatheory <> vars abbrev
+R6566:6569 Metalib.Metatheory <> vars syndef
 R6582:6585 Exp_ott <> rho5:102 var
 R6597:6606 Exp_ott <> ty_rho_tau constr
 R6617:6632 Exp_ott <> ftv_mono_ty_mono def
 def 6654:6669 <> ftv_mono_ty_poly
 R6677:6683 Exp_ott <> ty_poly ind
 binder 6672:6675 <> sig5:104
-R6688:6691 Metalib.Metatheory <> vars abbrev
+R6688:6691 Metalib.Metatheory <> vars syndef
 R6704:6707 Exp_ott <> sig5:104 var
 R6719:6729 Exp_ott <> ty_poly_rho constr
 R6740:6754 Exp_ott <> ftv_mono_ty_rho def
@@ -543,7 +543,7 @@ R6792:6807 Exp_ott <> ftv_mono_ty_poly:105 def
 def 6829:6839 <> ftv_mono_tm
 R6845:6846 Exp_ott <> tm ind
 binder 6842:6843 <> t5:107
-R6851:6854 Metalib.Metatheory <> vars abbrev
+R6851:6854 Metalib.Metatheory <> vars syndef
 R6867:6868 Exp_ott <> t5:107 var
 R6881:6887 Exp_ott <> exp_lit constr
 R6898:6899 Metalib.Metatheory <> ::set_scope:'{}' not
@@ -583,7 +583,7 @@ R7218:7233 Exp_ott <> ftv_mono_ty_poly def
 def 7255:7259 <> fv_tm
 R7265:7266 Exp_ott <> tm ind
 binder 7262:7263 <> t5:110
-R7271:7274 Metalib.Metatheory <> vars abbrev
+R7271:7274 Metalib.Metatheory <> vars syndef
 R7287:7288 Exp_ott <> t5:110 var
 R7301:7307 Exp_ott <> exp_lit constr
 R7318:7319 Metalib.Metatheory <> ::set_scope:'{}' not
@@ -628,7 +628,7 @@ R7759:7771 Exp_ott <> ty_mono_var_b constr
 R7773:7775 Coq.Init.Datatypes <> nat ind
 R7781:7793 Exp_ott <> ty_mono_var_b constr
 R7804:7816 Exp_ott <> ty_mono_var_f constr
-R7828:7833 Metalib.Metatheory <> eq_var abbrev
+R7828:7833 Metalib.Metatheory <> eq_var syndef
 R7837:7838 Exp_ott <> a5:114 var
 R7857:7869 Exp_ott <> ty_mono_var_f constr
 R7845:7849 Exp_ott <> tau_5:113 var
@@ -744,7 +744,7 @@ R9232:9240 Exp_ott <> exp_var_b constr
 R9242:9244 Coq.Init.Datatypes <> nat ind
 R9250:9258 Exp_ott <> exp_var_b constr
 R9269:9277 Exp_ott <> exp_var_f constr
-R9289:9294 Metalib.Metatheory <> eq_var abbrev
+R9289:9294 Metalib.Metatheory <> eq_var syndef
 R9298:9299 Exp_ott <> x5:133 var
 R9315:9323 Exp_ott <> exp_var_f constr
 R9306:9307 Exp_ott <> t5:132 var
@@ -784,7 +784,7 @@ R9628:9629 Exp_ott <> t5:132 var
 def 9656:9667 <> ftv_mono_ctx
 R9672:9674 Exp_ott <> ctx def
 binder 9670:9670 <> G:137
-R9679:9682 Metalib.Metatheory <> vars abbrev
+R9679:9682 Metalib.Metatheory <> vars syndef
 R9695:9695 Exp_ott <> G:137 var
 R9706:9708 Coq.Init.Datatypes <> nil constr
 R9713:9714 Metalib.Metatheory <> ::set_scope:'{}' not
@@ -846,7 +846,7 @@ R10149:10151 Exp_ott <> sig:146 var
 R10135:10141 Exp_ott <> exp_lit constr
 R10144:10144 Exp_ott <> i:145 var
 R10131:10131 Exp_ott <> G:144 var
-R10176:10179 Metalib.Metatheory <> vars abbrev
+R10176:10179 Metalib.Metatheory <> vars syndef
 binder 10174:10174 <> L:148
 R10185:10187 Exp_ott <> ctx def
 binder 10183:10183 <> G:149
@@ -920,7 +920,7 @@ R10669:10675 Exp_ott <> exp_app constr
 R10677:10677 Exp_ott <> t:155 var
 R10679:10679 Exp_ott <> u:156 var
 R10666:10666 Exp_ott <> G:154 var
-R10737:10740 Metalib.Metatheory <> vars abbrev
+R10737:10740 Metalib.Metatheory <> vars syndef
 binder 10735:10735 <> L:159
 R10746:10748 Exp_ott <> ctx def
 binder 10744:10744 <> G:160
@@ -985,7 +985,7 @@ R11111:11123 Exp_ott <> exp_type_anno constr
 R11125:11125 Exp_ott <> t:167 var
 R11127:11129 Exp_ott <> sig:168 var
 R11105:11105 Exp_ott <> G:166 var
-R11162:11165 Metalib.Metatheory <> vars abbrev
+R11162:11165 Metalib.Metatheory <> vars syndef
 binder 11160:11160 <> L:169
 R11171:11173 Exp_ott <> ctx def
 binder 11169:11169 <> G:170

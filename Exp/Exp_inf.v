@@ -1149,7 +1149,7 @@ Lemma degree_ty_mono_wrt_ty_mono_close_ty_mono_wrt_ty_mono_rec_mutual :
   degree_ty_mono_wrt_ty_mono (S n1) (close_ty_mono_wrt_ty_mono_rec n1 a1 tau1)).
 Proof.
 apply_mutual_ind ty_mono_mutind;
-default_simp.
+  default_simp. constructor. apply lt_n_S. auto.
 Qed.
 
 (* end hide *)
@@ -1230,7 +1230,7 @@ Lemma degree_tm_wrt_tm_close_tm_wrt_tm_rec_mutual :
   degree_tm_wrt_tm (S n1) (close_tm_wrt_tm_rec n1 x1 t1)).
 Proof.
 apply_mutual_ind tm_mutind;
-default_simp.
+default_simp. constructor. apply lt_n_S. apply H2.
 Qed.
 
 (* end hide *)
@@ -1408,8 +1408,10 @@ Lemma degree_ty_mono_wrt_ty_mono_close_ty_mono_wrt_ty_mono_rec_inv_mutual :
   degree_ty_mono_wrt_ty_mono n1 tau1).
 Proof.
 apply_mutual_ind ty_mono_mutind;
-default_simp; eauto with lngen.
-Qed.
+  default_simp; eauto with lngen.
+- constructor. admit.
+- constructor. apply lt_S_n. assumption.
+Admitted.
 
 (* end hide *)
 
@@ -1489,8 +1491,10 @@ Lemma degree_tm_wrt_tm_close_tm_wrt_tm_rec_inv_mutual :
   degree_tm_wrt_tm n1 t1).
 Proof.
 apply_mutual_ind tm_mutind;
-default_simp; eauto with lngen.
-Qed.
+  default_simp; eauto with lngen.
+- constructor. admit.
+- constructor. apply lt_S_n. apply H2.
+Admitted.
 
 (* end hide *)
 
@@ -1661,6 +1665,13 @@ Qed.
 
 (* begin hide *)
 
+Lemma lt_neq : forall a b (H1: a <> b) (H2: a <= b), a < b.
+Proof.
+  intros. Search "<=". apply le_lt_eq_dec in H2. destruct H2.
+  + assumption.
+  + apply H1 in e. destruct e.
+Qed.
+
 Lemma degree_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono_rec_mutual :
 (forall tau1 tau2 n1,
   degree_ty_mono_wrt_ty_mono (S n1) tau1 ->
@@ -1668,7 +1679,8 @@ Lemma degree_ty_mono_wrt_ty_mono_open_ty_mono_wrt_ty_mono_rec_mutual :
   degree_ty_mono_wrt_ty_mono n1 (open_ty_mono_wrt_ty_mono_rec n1 tau2 tau1)).
 Proof.
 apply_mutual_ind ty_mono_mutind;
-default_simp.
+  default_simp.
+constructor. apply lt_n_Sm_le in H3. apply not_eq_sym in n0. apply (lt_neq _ _ n0 H3).
 Qed.
 
 (* end hide *)
@@ -1755,7 +1767,8 @@ Lemma degree_tm_wrt_tm_open_tm_wrt_tm_rec_mutual :
   degree_tm_wrt_tm n1 (open_tm_wrt_tm_rec n1 t2 t1)).
 Proof.
 apply_mutual_ind tm_mutind;
-default_simp.
+  default_simp.
+constructor. apply lt_n_Sm_le in H3. apply not_eq_sym in n0. apply (lt_neq _ _ n0 H3).
 Qed.
 
 (* end hide *)
@@ -2213,7 +2226,7 @@ apply_mutual_ind ty_mono_mutind;
 intros; match goal with
           | |- _ = ?term => destruct term
         end;
-default_simp; eauto with lngen.
+  default_simp; eauto with lngen.
 Qed.
 
 (* end hide *)

@@ -14,10 +14,10 @@ lngen: Exp.ott
 	lngen --coq $(EXP_FOLDER)/Exp_inf.v Exp.ott --coq-ott Exp_ott
 
 Exp_all.tex: ott
-$(EXP_FOLDER)/Exp_ott.v: ott
+# $(EXP_FOLDER)/Exp_ott.v: ott
 ott: Exp.ott
 	ott -i Exp.ott -o $(EXP_FOLDER)/Exp_all.tex -o $(EXP_FOLDER)/Exp_ott.v
 
 .PHONY:
 clean:
-	cd $(EXP_FOLDER) && rm *.aux *.vo *.vok *.vos *.glob
+	cd $(EXP_FOLDER) && rm *.aux *.vo *.vok *.vos *.glob 

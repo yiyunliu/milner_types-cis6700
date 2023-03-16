@@ -16,7 +16,8 @@ lngen: Exp.ott
 Exp_all.tex: ott
 # $(EXP_FOLDER)/Exp_ott.v: ott
 ott: Exp.ott
-	ott -i Exp.ott -o $(EXP_FOLDER)/Exp_all.tex -o $(EXP_FOLDER)/Exp_ott.v
+	ott -i Exp.ott -o $(EXP_FOLDER)/Exp_ott.v -coq_lngen true -coq_expand_list_types true
+	ott -i Exp.ott -o $(EXP_FOLDER)/Exp_all.tex
 
 .PHONY:
 clean:

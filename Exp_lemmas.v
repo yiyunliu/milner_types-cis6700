@@ -1,5 +1,11 @@
-From Exp Require Export Exp_ott.
+Require Import Coq.Arith.Wf_nat.
+Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Coq.Program.Equality.
 
+Require Export Metalib.Metatheory.
+Require Export Metalib.LibLNgen.
+
+From Exp Require Export Exp_ott.
 
 (*************************************************************************)
 (** Notation, manually added *)
@@ -86,7 +92,7 @@ Proof.
   assert (typing empty e T); auto.
   induction H; subst; auto.
   - (* exp_lit *)
-   left. discriminate H0.
+   left. admit.
   - (* exp_lit duplicate *)
     admit.
   Admitted.

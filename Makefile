@@ -3,8 +3,8 @@ EXP_FOLDER = Exp
 all: ott lngen adjust coq
 
 coq: $(EXP_FOLDER)/Exp_ott.v $(EXP_FOLDER)/Exp_inf.v
-	coqc -Q . $(EXP_FOLDER) $(EXP_FOLDER)/Exp_ott.v
-	coqc -Q . $(EXP_FOLDER) $(EXP_FOLDER)/Exp_inf.v
+	coqc -Q $(EXP_FOLDER) $(EXP_FOLDER) $(EXP_FOLDER)/Exp_ott.v
+	coqc -Q $(EXP_FOLDER) $(EXP_FOLDER) $(EXP_FOLDER)/Exp_inf.v
 
 adjust: $(EXP_FOLDER)/Exp_inf.v
 	sed -i".original" -e /Require\ Export\ $(EXP_FOLDER)/s/^/From\ $(EXP_FOLDER)\ / $(EXP_FOLDER)/Exp_inf.v

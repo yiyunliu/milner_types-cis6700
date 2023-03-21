@@ -107,7 +107,7 @@
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathsf{value}\, \ottnt{v} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathsf{uniq}\, \Gamma }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \mathsf{closed}\, \sigma }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \mathsf{lc}\, \sigma }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \ottmv{a} \not\in \ottnt{ftvany} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottmv{x}  \ottsym{:}  \sigma \, \in \, \Gamma}{}{}{}{}}
 
@@ -171,7 +171,7 @@
 \ottpremise{ \mathsf{uniq}\, \Gamma }%
 \ottpremise{\ottmv{x}  \ottsym{:}  \sigma \, \in \, \Gamma}%
 }{
- \Gamma \vdash \ottmv{i} : \sigma }{%
+ \Gamma \vdash \ottmv{x} : \sigma }{%
 {\ottdrulename{typ\_var}}{}%
 }}
 
@@ -203,7 +203,7 @@
 
 
 \newcommand{\ottdruletypXXannot}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{closed}\, \sigma }%
+\ottpremise{ \mathsf{lc}\, \sigma }%
 \ottpremise{ \Gamma \vdash \ottnt{t} : \sigma }%
 }{
  \Gamma \vdash  (  \ottnt{t}  ::  \sigma  )  : \sigma }{%
@@ -296,6 +296,14 @@
 }}
 
 
+\newcommand{\ottdrulestepXXeraseOne}[1]{\ottdrule[#1]{%
+\ottpremise{ \ottnt{t}   \longrightarrow   \ottnt{t'} }%
+}{
+  \ottnt{t}  ::  \sigma    \longrightarrow    \ottnt{t'}  ::  \sigma  }{%
+{\ottdrulename{step\_erase1}}{}%
+}}
+
+
 \newcommand{\ottdrulestepXXerase}[1]{\ottdrule[#1]{%
 }{
   \ottnt{t}  ::  \sigma    \longrightarrow   \ottnt{t} }{%
@@ -310,6 +318,7 @@
 \ottusedrule{\ottdrulestepXXapp{}}
 \ottusedrule{\ottdrulestepXXannotXXappTwo{}}
 \ottusedrule{\ottdrulestepXXannotXXapp{}}
+\ottusedrule{\ottdrulestepXXeraseOne{}}
 \ottusedrule{\ottdrulestepXXerase{}}
 \end{ottdefnblock}}
 
@@ -330,7 +339,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        16 good    0 bad
-Definition rule clauses: 31 good    0 bad
+Definition rules:        17 good    0 bad
+Definition rule clauses: 33 good    0 bad
 \end{verbatim}
 \end{document}

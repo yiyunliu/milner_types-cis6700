@@ -3,6 +3,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Program.Equality.
 
 Require Export Metalib.Metatheory.
+Require Export Metalib.MetatheoryAtom.
 Require Export Metalib.LibLNgen.
 
 From Exp Require Export Exp_ott.
@@ -64,15 +65,25 @@ Proof.
   intros t HT HVal.
   destruct HVal. *)
 
-Theorem unique_typing: forall t T1 T2,
-  typing empty t (ty_poly_rho T1)
-    -> typing empty t (ty_poly_rho T2)
+Theorem typing_inversion_gen: forall G t T1,
+  typing G t (ty_poly_poly_gen T1) ->
+    typing G t T1.
+Proof with eauto.
+  intros. inversion H; subst.
+  - admit.
+Admitted.
+
+Theorem unique_typing_rho: forall G t T1 T2,
+  typing G t (ty_poly_rho T1)
+    -> typing G t (ty_poly_rho T2)
     -> T1 = T2.
 Proof with eauto.
-  intros t. induction t; intros.
-  - inversion H; inversion H0; subst...
-    + inversion H7.
-    + 
+  intros G t T1 T2 H1 H2.
+  destruct T1. destruct T2. f_equal.
+  generalize dependent tau0.
+  induction t; intros.
+  - inversion H1; inversion H2; subst...
+    +
 Admitted.
 
 Theorem canonical_forms_fun: forall G t T1 T2,
@@ -86,21 +97,53 @@ Proof with eauto.
   
 Admitted.
 
+Lemma empty_ctx_typing_lc: forall e T,
+  typing empty e T -> lc_tm e.
+Proof with eauto.
+  intros e T H.
+  induction H; subst...
+  - destruct H...
+  - destruct (atom_fresh L).
+    apply (H0 x)...
+Qed.
+
+#[export] Hint Resolve empty_ctx_typing_lc : core.
+
+Lemma empty_ctx_typing_closed: forall e T,
+  typing empty e T -> fv_tm e [=] {}.
+Proof with eauto.
+  intros e T H.
+  assert (Hlc: lc_tm e)...
+  induction H; subst; simpl in *; try fsetdec.
+Admitted.
 
 Theorem progress : forall e T,
   typing empty e T ->
-  is_value_of_tm e \/ exists e', step e e'.
+    is_value_of_tm e \/ exists e', step e e'.
 Proof with eauto.
-  intros e T H.
-  (* We induct on the term e so that we always have a hypothesis 
-    involving the empty context. *)
-  induction e; subst; auto;
-  try (left; constructor).
-  - (* var shouldn't have a type in the empty context *)
-    inversion H; subst...
-    
-Admitted.
-
+  intros e T H. assert (H0 := H).
+  remember empty as G.
+  induction H0; subst; auto;
+  try (left; constructor)...
+  - right; destruct IHtyping1; destruct IHtyping2...
+    + assert (Hlam: exists u, t = exp_abs u).
+      { apply (canonical_forms_fun empty t _ _ H0_ H0). }
+      destruct Hlam; subst...
+    + assert (Hlam: exists u, t = exp_abs u).
+      { apply (canonical_forms_fun empty t _ _ H0_ H0). }
+      destruct Hlam as [t1 Hlam]; subst...
+      destruct H1 as [u' H1]. eexists...
+    + destruct H0 as [t' H0]. eexists...
+    + destruct H0 as [t' H0]. eexists...
+  - right; destruct IHtyping...
+    destruct H3 as [u' H3]. exists (exp_let u' t)...
+  - right; destruct IHtyping...
+    + destruct H0. eexists...
+    + destruct H0. destruct H2 as [t' H2]. eexists...
+  - destruct (atom_fresh L).
+    specialize H0 with x; specialize H1 with x.
+    assert (n1 := n); apply H0 in n; apply H1 in n1...
+Qed.
 
 Theorem preservation : forall (E : ctx) e e' T,
   typing E e T

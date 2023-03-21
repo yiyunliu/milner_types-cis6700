@@ -334,10 +334,10 @@ end.
 Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
  | typ_int : forall (G:ctx) (i:integer),
      typing G  (exp_lit  i )  (ty_poly_rho (ty_rho_tau ty_mono_base))
- | typ_var : forall (G:ctx) (i:integer) (sig:ty_poly) (x:tmvar),
+ | typ_var : forall (G:ctx) (x:tmvar) (sig:ty_poly),
       uniq  G  ->
       binds x sig G  ->
-     typing G  (exp_lit  i )  sig
+     typing G (exp_var_f x) sig
  | typ_abs : forall (L:vars) (G:ctx) (t:tm) (tau1 tau2:ty_mono),
       ( forall x , x \notin  L  -> typing  (( x ~ (ty_poly_rho (ty_rho_tau tau1)) )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho (ty_rho_tau tau2)) )  ->
      typing G  ( (exp_abs t) )  (ty_poly_rho  ( (ty_rho_tau (ty_mono_func tau1 tau2)) ) )
@@ -350,7 +350,7 @@ Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
       ( forall x , x \notin  L  -> typing  (( x ~ sig )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho rho) )  ->
      typing G (exp_let u t) (ty_poly_rho rho)
  | typ_annot : forall (G:ctx) (t:tm) (sig:ty_poly),
-      ftv_mono_ty_poly sig [=]{}  ->
+      lc_ty_poly sig  /\ ftv_mono_ty_poly sig [=]{}  ->
      typing G t sig ->
      typing G  ( (exp_type_anno t sig) )  sig
  | typ_gen : forall (L:vars) (G:ctx) (t:tm) (rho:ty_rho),
@@ -396,6 +396,10 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
      lc_tm (exp_typed_abs sig t) ->
      lc_tm v ->
      step (exp_app  ( (exp_typed_abs sig t) )  v)  (open_tm_wrt_tm t v ) 
+ | step_erase1 : forall (t:tm) (sig:ty_poly) (t':tm),
+     lc_ty_poly sig ->
+     step t t' ->
+     step (exp_type_anno t sig) (exp_type_anno t' sig)
  | step_erase : forall (t:tm) (sig:ty_poly),
      lc_ty_poly sig ->
      lc_tm t ->

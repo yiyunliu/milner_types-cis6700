@@ -175,8 +175,8 @@ formula :: 'formula_' ::=
     {{ coq uniq [[G]] }}
 	  {{ tex \mathsf{uniq}\,[[G]] }}
   | closed sig               ::   :: closed_sig
-    {{ coq ftv_mono_ty_poly[[sig]][=]{} }}
-	  {{ tex \mathsf{closed}\,[[sig]] }}
+    {{ coq lc_ty_poly[[sig]] /\ ftv_mono_ty_poly[[sig]][=]{} }}
+	  {{ tex \mathsf{lc}\,[[sig]] }}
   | a notin ftvany           ::   :: in_ftv
     % (+ bind a in ftvany +)
     {{ coq [[a]]`notin`[[ftvany]] }}
@@ -202,7 +202,7 @@ by
  uniq G
  x : sig in G
 -------------- :: var
- G |- i : sig
+ G |- x : sig
 
  G, x : tau1 |- t : tau2
 ------------------------------- :: abs
@@ -265,6 +265,10 @@ by
 
 ------------------------------------------------------ :: annot_app
  (\ (annot x sig) . t) v --> t [ x ~> v ]
+
+ t --> t'
+------------------------------ :: erase1
+ annot t sig --> annot t' sig
 
 ------------------- :: erase
  annot t sig --> t

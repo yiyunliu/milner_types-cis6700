@@ -146,8 +146,7 @@ Proof.
   - inversion H3.
   - inversion H3.
   - inversion H3.
-  - eapply typ_inst in H1.
-    + (* apply (unique_typing_rho Gamma (exp_lit i) _ _ H4) in H1. *)
+  - eapply typ_inst in H1. apply (unique_typing_rho (exp_lit i) _ _ H4) in H1.
 
 Admitted.
 

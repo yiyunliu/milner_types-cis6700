@@ -21,4 +21,4 @@ ott: Exp.ott
 
 .PHONY:
 clean:
-	rm *.aux *.vo *.vok *.vos *.glob
+	rm -f .*.aux *.vo *.vok *.vos *.glob

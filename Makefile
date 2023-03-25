@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 EXP_FOLDER = Exp
 
 all: ott lngen adjust coq
@@ -11,7 +13,7 @@ adjust: Exp_inf.v
 
 Exp_inf.v: lngen
 lngen: Exp.ott
-	lngen --coq Exp_inf.v Exp.ott --coq-ott Exp_ott --coq-admit
+	bash -c "lngen --coq Exp_inf.v Exp.ott --coq-ott Exp_ott --coq-admit"
 
 Exp_all.tex: ott
 # Exp_ott.v: ott

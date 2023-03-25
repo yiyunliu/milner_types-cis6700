@@ -89,7 +89,7 @@ Theorem progress : forall e T,
 Proof with eauto.
   intros e T H. assert (H0 := H).
   remember empty as G.
-  induction H0; subst; auto;
+  induction H0; subst;
   try (left; constructor)...
   - right; destruct IHtyping1; destruct IHtyping2...
     + assert (Hlam: exists u, t = exp_abs u).
@@ -115,7 +115,7 @@ Theorem preservation : forall (E : ctx) e e' T,
   typing E e T
     -> step e e'
     -> typing E e' T.
-Proof.
+Proof with eauto.
   intros E e e' T Htyp Hstep.
 
 

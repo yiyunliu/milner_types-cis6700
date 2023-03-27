@@ -167,7 +167,14 @@ Proof.
   - (* exp_abs *) 
     apply typ_abs with (L := dom (G0 ++ F ++ E) \u L).
     intros x Frx.
-    Admitted. (* TODO: finish *)
+    rewrite_env (([(x, ty_poly_rho (ty_rho_tau tau1))] ++ G0) ++ F ++ E).
+    apply H0.
+    + auto.
+    + simpl_env. reflexivity.
+    + simpl_env. apply uniq_push.
+      * assumption.
+      * auto.
+  - (* exp_let *) Admitted.
 
   
   

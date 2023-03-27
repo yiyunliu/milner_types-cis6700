@@ -155,7 +155,7 @@ Qed.
 
 
 (** Referenced Stlc.Lec2_sol from Metalib repo *)
-Theorem weakening_strengthened : forall (E F G : ctx) t T,
+Theorem typing_weakening_strengthened : forall (E F G : ctx) t T,
   typing (G ++ E) t T 
     -> uniq (G ++ F ++ E)
     -> typing (G ++ F ++ E) t T.
@@ -187,8 +187,17 @@ Proof.
         -- auto.
 Qed. 
  
+Theorem typing_weakening : forall (E F : ctx) t T,
+  typing E t T -> 
+  uniq (F ++ E) ->
+  typing (F ++ E) t T.
+Proof.
+  intros E F t T H J.
+  rewrite_env (nil ++ F ++ E).
+  apply typing_weakening_strengthened; auto.
+Qed.
   
-  
+
 
 
 Theorem preservation : forall (E : ctx) e e' T,

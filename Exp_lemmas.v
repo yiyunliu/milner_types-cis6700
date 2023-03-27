@@ -96,6 +96,8 @@ Proof.
   - eapply typ_inst in H1. apply (unique_typing_rho (exp_lit i) _ _ H4) in H1.
 Admitted.
 
+
+
 Theorem canonical_forms_fun: forall t T1 T2,
   typing empty t (ty_poly_rho (ty_rho_tau (ty_mono_func T1 T2)))
     -> is_value_of_tm t 
@@ -150,6 +152,26 @@ Proof with eauto.
     specialize H0 with x; specialize H1 with x.
     assert (n1 := n); apply H0 in n; apply H1 in n1...
 Qed.
+
+
+
+Theorem weakening : forall (E F G : ctx) t T,
+  typing (G ++ E) t T 
+    -> uniq (G ++ F ++ E)
+    -> typing (G ++ F ++ E) t T.
+Proof.
+  intros E F G t T H.
+  remember (G ++ E) as E'.
+  generalize dependent G.
+  induction H; intros G0 Eq Uniq; subst; eauto.
+  - (* exp_abs *) 
+    apply typ_abs with (L := dom (G0 ++ F ++ E) \u L).
+    intros x Frx.
+    Admitted. (* TODO: finish *)
+
+  
+  
+
 
 Theorem preservation : forall (E : ctx) e e' T,
   typing E e T

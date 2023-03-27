@@ -154,8 +154,8 @@ Proof with eauto.
 Qed.
 
 
-
-Theorem weakening : forall (E F G : ctx) t T,
+(** Referenced Stlc.Lec2_sol from Metalib repo *)
+Theorem weakening_strengthened : forall (E F G : ctx) t T,
   typing (G ++ E) t T 
     -> uniq (G ++ F ++ E)
     -> typing (G ++ F ++ E) t T.
@@ -174,8 +174,19 @@ Proof.
     + simpl_env. apply uniq_push.
       * assumption.
       * auto.
-  - (* exp_let *) Admitted.
-
+  - (* exp_let *) 
+    apply (typ_let (dom (G0 ++ F ++ E) \u L) _ u t rho sig).
+    + auto.
+    + intros x Frx.
+      rewrite_env (([(x, sig)] ++ G0) ++ F ++ E).
+      apply H1.
+      * auto.
+      * simpl_env. reflexivity.
+      * simpl_env. apply uniq_push.
+        -- assumption.
+        -- auto.
+Qed. 
+ 
   
   
 

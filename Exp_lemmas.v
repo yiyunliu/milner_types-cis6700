@@ -110,7 +110,7 @@ Proof with eauto.
   - eexists... 
   - apply IHtyping...
     destruct rho.
-    admit.
+    admit. (* TODO: finish canonical forms for functions *)
 Admitted.
 
 Lemma empty_ctx_typing_lc: forall e T,
@@ -154,7 +154,8 @@ Proof with eauto.
 Qed.
 
 
-(** Referenced Stlc.Lec2_sol from Metalib repo *)
+(* Strengthened version of the weakening lemma 
+ * Referenced Stlc.Lec2_sol from Metalib repo *)
 Theorem typing_weakening_strengthened : forall (E F G : ctx) t T,
   typing (G ++ E) t T 
     -> uniq (G ++ F ++ E)
@@ -187,6 +188,7 @@ Proof.
         -- auto.
 Qed. 
  
+(** Original statemnent of the weakening lemma *)
 Theorem typing_weakening : forall (E F : ctx) t T,
   typing E t T -> 
   uniq (F ++ E) ->
@@ -196,6 +198,39 @@ Proof.
   rewrite_env (nil ++ F ++ E).
   apply typing_weakening_strengthened; auto.
 Qed.
+
+
+(** If a variable doesn't appear free in a term, 
+    substituting for it has no effect. *)
+Lemma subst_exp_fresh_eq : forall (x : var) e u,
+  x `notin` fv_tm e ->
+  subst_tm u x e = e.
+Proof.
+  intros x e u H.
+  induction e; eauto; 
+    try (simpl in *; f_equal; eauto).
+  - (* exp_var_f *)
+    unfold subst_tm.
+    destruct (x0 == x).
+    + (* x0 = x *) 
+      subst. simpl fv_tm in H. fsetdec.
+    + (* x0 <> x *)  
+      reflexivity.
+Qed.
+   
+
+(* Notation "[ z ~> u ] e" := (subst_exp u z e) (at level 0) : exp_scope. *)  
+
+
+(** Variable case of the substitution lemma *)
+Lemma typing_subst_var_case : forall (E F : ctx) u S T (z x : atom),
+  binds x T (F ++ [(z, S)] ++ E) ->
+  uniq (F ++ [(z, S)] ++ E) -> 
+  typing E u S ->
+  typing (F ++ E) ([z ~> u] (exp_var_f x )) T.
+  (* TODO: double check how substitution works in the Ott file*)
+Proof.
+  Admitted.
   
 
 

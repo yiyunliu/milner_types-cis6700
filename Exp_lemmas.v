@@ -292,7 +292,7 @@ Proof.
     apply IHe. assumption.
 Qed.
 
-(* If x is a fresh variable, x continues to be fresh we substitute all occurrences of x in e with u. *)
+(* If [x] is a fresh variable, [x] continues to be fresh we substitute all occurrences of [x] in [e] with [u]. *)
 Lemma subst_tm_fresh_same : forall u e x,
   x `notin` fv_tm e ->
   x `notin` fv_tm (subst_tm u x e).
@@ -305,6 +305,37 @@ Proof.
     + (* x0 <> x *) simpl. assumption.
 Qed.
 
+(* If [x] is a fresh variable, 
+   the free variables of [e] after substituting 
+   all occurrences of [x] in [e] with [u] are the 
+   same as the free variables of [e] pre-substitution. *)
+Lemma fv_tm_subst_tm_fresh : forall u e x,
+  x `notin` fv_tm e ->
+  fv_tm (subst_tm u x e) [=] fv_tm e.
+Proof.
+  intros.
+  induction e; simpl in *; auto; try fsetdec.
+  - (* exp_var_f *) 
+    destruct (x0 == x).
+    + (* x0 = x *) subst. fsetdec.
+    + (* x0 <> x *) simpl. fsetdec.
+  - (* exp_abs *) 
+    rewrite IHe1.
+    rewrite IHe2.
+    fsetdec.
+    destruct_notin. 
+    assumption.
+    destruct_notin.
+    apply H.
+  - (* exp_typed_abs *) 
+    rewrite IHe1.
+    rewrite IHe2.
+    fsetdec.
+    destruct_notin. 
+    assumption.
+    destruct_notin.
+    apply H.
+Qed.
 
 
 

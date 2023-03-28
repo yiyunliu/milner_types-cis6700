@@ -199,6 +199,51 @@ Proof.
   apply typing_weakening_strengthened; auto.
 Qed.
 
+(** Substitution for variables: same variable *)
+Lemma subst_eq_var : forall (x : var) u,
+  subst_tm u x (exp_var_f x) = u.
+Proof.
+  intros x u.
+  simpl.
+  destruct (x == x).
+  - (* x = x *) admit. (* TODO *)
+  - (* x <> x *) destruct n. auto.
+Admitted.
+
+(** Substitution for variables: different variable *)
+Lemma subst_neq_var : forall (x y : var) u,
+  y <> x ->
+  subst_tm u x (exp_var_f y) = exp_var_f y.
+Proof.
+  intros x y u.
+  simpl.
+  intro Hneq.
+  destruct (y == x).
+  - (* y = x *) destruct Hneq. assumption.
+  - (* y <> x *) (* TODO *)
+Admitted.
+
+(** Substituting the same variable in an expression doesn't make a difference *)
+Lemma subst_same : forall y e,
+  subst_tm (exp_var_f y) y e = e.
+Proof.
+  induction e; simpl; intros; eauto.
+  - (* exp_var_f *) destruct (x == y); subst; eauto.
+  - (* exp_abs *) rewrite IHe. auto.
+  - (* exp_app *) 
+    rewrite IHe1. 
+    rewrite IHe2. 
+    reflexivity.
+  - (* exp_typed_abs *)
+    rewrite IHe. reflexivity.
+  - (* exp_let *) 
+    rewrite IHe1.
+    rewrite IHe2.
+    reflexivity.
+  - (* exp_type_anno *)    
+    rewrite IHe. reflexivity.
+Qed. 
+
 
 (** If a variable doesn't appear free in a term, 
     substituting for it has no effect. *)

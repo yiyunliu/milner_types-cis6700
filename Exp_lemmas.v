@@ -202,7 +202,7 @@ Qed.
 
 (** If a variable doesn't appear free in a term, 
     substituting for it has no effect. *)
-Lemma subst_exp_fresh_eq : forall (x : var) e u,
+Lemma subst_tm_fresh_eq : forall (x : var) e u,
   x `notin` fv_tm e ->
   subst_tm u x e = e.
 Proof.
@@ -217,6 +217,37 @@ Proof.
     + (* x0 <> x *)  
       reflexivity.
 Qed.
+
+(** Free variables are not introduced by substitution. *)
+Lemma fv_tm_subst_tm_notin : forall x y u e,
+  x `notin` fv_tm e ->
+  x `notin` fv_tm u ->
+  x `notin` fv_tm (subst_tm u y e).
+Proof.
+  intros x y u e Fr1 Fr2.
+  induction e; simpl in *; 
+    try assumption.
+  - (* exp_var_f *)
+    destruct (x0 == y).
+    + (* x0 = y *) assumption.
+    + (* x0 <> y *) simpl. assumption.
+  - (* exp_abs *) apply IHe. assumption.
+  - (* exp_app *)
+    destruct_notin.
+    apply notin_union.
+    apply IHe1. assumption.
+    apply IHe2. assumption.
+  - (* exp_typed_abs *) apply IHe. assumption.
+  - (* exp_let *) 
+    destruct_notin.
+    apply notin_union.
+    apply IHe1. assumption.
+    apply IHe2. assumption.
+  - (* exp_type_anno *) 
+    apply IHe. assumption.
+Qed.
+
+
    
 
 (* Notation "[ z ~> u ] e" := (subst_exp u z e) (at level 0) : exp_scope. *)  

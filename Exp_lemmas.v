@@ -292,9 +292,23 @@ Proof.
     apply IHe. assumption.
 Qed.
 
+(* If x is a fresh variable, x continues to be fresh we substitute all occurrences of x in e with u. *)
+Lemma subst_tm_fresh_same : forall u e x,
+  x `notin` fv_tm e ->
+  x `notin` fv_tm (subst_tm u x e).
+Proof.
+  intros.
+  induction e; simpl in *; auto.
+  - (* exp_var_f *) 
+    destruct (x0 == x).
+    + (* x0 = x *) subst. fsetdec.
+    + (* x0 <> x *) simpl. assumption.
+Qed.
+
+
+
 
    
-
 (* Notation "[ z ~> u ] e" := (subst_exp u z e) (at level 0) : exp_scope. *)  
 
 

@@ -229,10 +229,10 @@ Proof.
   intros x y u.
   simpl.
   intro Hneq.
-  destruct (y == x).
-  - (* y = x *) destruct Hneq. assumption.
-  - (* y <> x *) (* TODO *)
-Admitted.
+  destruct eq_dec.
+  - destruct Hneq. assumption.
+  - reflexivity.
+Qed.
 
 (** Substituting the same variable in an expression doesn't make a difference *)
 Lemma subst_same : forall y e,

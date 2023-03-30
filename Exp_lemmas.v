@@ -410,7 +410,11 @@ Proof.
       ++ assumption.
 Qed.
 
-        
+Lemma typing_to_lc_tm : forall E e T,
+    typing E e T -> lc_tm e.
+Proof.
+  Admitted.
+
 (** Substitution lemma *)      
 Lemma typing_subst : forall (E F : ctx) e u S T (z : atom), 
   typing (F ++ [(z, S)] ++ E) e T ->
@@ -424,7 +428,8 @@ Proof.
   - (* typ_int *) 
     intros F Heq.
     subst.
-    admit. (* TODO *)
+    simpl in *.
+    apply typ_int.
   - (* typ_var *)     
     intros F Heq.
     subst.
@@ -439,7 +444,26 @@ Proof.
     apply typ_abs with (L := {{z}} \u L).
     intros y Fry.
     rewrite subst_var.
+    rewrite_env (([(y, ty_poly_rho (ty_rho_tau tau1))] ++ F) ++ E).
+    apply H0.
+    auto.
+    simpl_env. reflexivity.
+    auto.
+    eapply typing_to_lc_tm. apply Hu.
+  - intros F Heq. simpl. eapply typ_app.
+    ++ apply (IHHe1 _ Heq).
+    ++ apply (IHHe2 _ Heq).
+  - intros F Heq. eapply typ_let.
+    ++ eauto.
+    ++ Search subst_tm. admit.
+  - simpl. admit.
+  - intos F Heq.
+
+
+
+    
 Admitted.
+
 
 
 Theorem preservation : forall (E : ctx) e e' T,

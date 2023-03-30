@@ -56,13 +56,25 @@ Local Open Scope exp_scope.
 (** Lemmas, manually added *)
 (*************************************************************************)
 
-Lemma exp_abs_not_base : forall (Gamma: ctx) (t : tm),
-    not (typing Gamma (exp_abs t) Int).
+Inductive instantiation : ty_poly -> ty_rho -> Prop :=
+  .
+
+  Lemma exp_abs_not_base : forall (Gamma: ctx) (t : tm) (sigma : ty_poly),
+      instantiation sigma (ty_rho_tau (ty_mono_base)) ->
+    not (typing Gamma (exp_abs t) sigma).
 Proof.
-  intros Gamma t H. remember (exp_abs t) as t_fun. induction H; try (inversion Heqt_fun).
-  - subst. simpl in *. pick fresh x0 for L. apply H0 in Fr; auto. admit.
-  - pick fresh x0 for L. apply H0 in Fr; auto.
-  - auto.
+  intros Gamma t sigma H H1. dependent induction H1.
+  - pick fresh x0 for L. specialize (H0 x0 Fr). specialize (H1 x0 Fr). admit. (* H can be discharged*)
+  - pick fresh a for L. specialize (H0 a Fr t). eapply H0. admit. admit.
+  - eapply IHtyping. 
+
+
+
+
+  (* (* remember (exp_abs t) as t_fun. *) induction H; try (inversion Heqt_fun). *)
+  (* - subst. simpl in *. pick fresh x0 for L. apply H0 in Fr; auto. admit. *)
+  (* - pick fresh x0 for L. apply H0 in Fr; auto. *)
+  (* - auto. *)
 Admitted.
 
 Lemma exp_typed_abs_not_base : forall Gamma (t : tm) T,
@@ -80,9 +92,10 @@ Lemma canonical_forms_int : forall (t : tm),
 Proof with eauto.
   intros. induction t; try (destruct H0).
   - exists i. reflexivity.
-  - apply exp_abs_not_base in H. destruct H.
+  - apply exp_abs_not_base in H. destruct H. admit.
   - inversion H; subst. apply exp_typed_abs_not_base in H. inversion H.
-Qed.
+    Admitted.
+(* Qed. *)
 
 Lemma exp_lit_not_func : forall i T1 T2,
     not (typing empty (exp_lit i) (ty_poly_rho (ty_rho_tau (ty_mono_func T1 T2)))).
@@ -453,11 +466,18 @@ Proof.
   - intros F Heq. simpl. eapply typ_app.
     ++ apply (IHHe1 _ Heq).
     ++ apply (IHHe2 _ Heq).
-  - intros F Heq. eapply typ_let.
+  - intros F Heq. eapply typ_let with (L := {{z}} \u L).  (* pick fresh x and apply typ_let. *) fold subst_tm.
     ++ eauto.
-    ++ Search subst_tm. admit.
+    ++ fold subst_tm. intros x Fry.
+       rewrite subst_var.
+       rewrite_env (([(x, sig)] ++ F) ++ E).
+       apply H0.
+       auto.
+       subst. auto.
+       auto.
+       eapply typing_to_lc_tm. apply Hu.
   - simpl. admit.
-  - intos F Heq.
+  - intros F Heq.
 
 
 

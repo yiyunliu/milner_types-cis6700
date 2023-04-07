@@ -359,7 +359,7 @@ Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
  | typ_inst : forall (G:ctx) (t:tm) (tau:ty_mono) (rho:ty_rho),
      lc_ty_mono tau ->
      typing G t (ty_poly_poly_gen (ty_poly_rho rho)) ->
-     typing G t  (open_ty_poly_wrt_ty_mono (ty_poly_rho rho) tau ) .
+     typing G t (ty_poly_rho  (open_ty_rho_wrt_ty_mono rho tau ) ).
 
 (* defns JStep *)
 Inductive step : tm -> tm -> Prop :=    (* defn step *)
@@ -405,8 +405,18 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
      lc_tm t ->
      step (exp_type_anno t sig) t.
 
+(* defns JInst *)
+Inductive inst : ty_poly -> ty_rho -> Prop :=    (* defn inst *)
+ | inst_open_refl : forall (rho:ty_rho),
+     lc_ty_rho rho ->
+     inst (ty_poly_rho rho) rho
+ | inst_open_poly : forall (L:vars) (sig:ty_poly) (tau:ty_mono) (rho:ty_rho),
+     lc_ty_mono tau ->
+      ( forall a , a \notin  L  -> inst  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  rho )  ->
+     inst (ty_poly_poly_gen sig)  (open_ty_rho_wrt_ty_mono rho tau ) .
+
 
 (** infrastructure *)
-#[export] Hint Constructors typing step lc_ty_mono lc_ty_rho lc_ty_poly lc_tm : core.
+#[export] Hint Constructors typing step inst lc_ty_mono lc_ty_rho lc_ty_poly lc_tm : core.
 
 

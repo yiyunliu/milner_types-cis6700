@@ -49,13 +49,13 @@
 \newcommand{\otttyXXrho}{
 \ottrulehead{\text{Rho-types}  ,\ \rho}{::=}{\ottcom{Rho-types}}\ottprodnewline
 \ottfirstprodline{|}{\tau}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ ( \rho ) } {\textsf{S}}{}{}{}}
+\ottprodline{|}{ ( \rho ) } {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{ \left[  \ottmv{a}  \mapsto  \tau  \right]  \rho } {\textsf{M}}{}{}{}}
 
 \newcommand{\otttyXXpoly}{
 \ottrulehead{\text{Polytypes}  ,\ \sigma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\rho}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \forall  \ottmv{a}  .  \sigma }{}{\textsf{bind}\; \ottmv{a}\; \textsf{in}\; \sigma}{}{}\ottprodnewline
-\ottprodline{|}{ \left[  \ottmv{a}  \mapsto  \tau  \right]  \sigma } {\textsf{M}}{}{}{}}
+\ottprodline{|}{ \forall  \ottmv{a}  .  \sigma }{}{\textsf{bind}\; \ottmv{a}\; \textsf{in}\; \sigma}{}{}}
 
 \newcommand{\otttm}{
 \ottrulehead{\text{Terms}  ,\ \ottnt{t}  ,\ \ottnt{u}}{::=}{}\ottprodnewline
@@ -119,10 +119,15 @@
 \ottrulehead{\ottnt{JStep}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \ottnt{t}   \longrightarrow   \ottnt{u} }{}{}{}{}}
 
+\newcommand{\ottJInst}{
+\ottrulehead{\ottnt{JInst}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{ \vdash^{\text{inst} } \sigma \le \rho }{}{}{}{}}
+
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{JTyping}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{JStep}}{}{}{}{}}
+\ottprodline{|}{\ottnt{JStep}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{JInst}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
@@ -153,6 +158,7 @@
 \ottformula\ottinterrule
 \ottJTyping\ottinterrule
 \ottJStep\ottinterrule
+\ottJInst\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
 }}
@@ -326,9 +332,35 @@
 \newcommand{\ottdefnsJStep}{
 \ottdefnstep{}}
 
+% defns JInst
+%% defn inst
+\newcommand{\ottdruleinstXXopenXXrefl}[1]{\ottdrule[#1]{%
+}{
+ \vdash^{\text{inst} } \rho \le \rho }{%
+{\ottdrulename{inst\_open\_refl}}{}%
+}}
+
+
+\newcommand{\ottdruleinstXXopenXXpoly}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{inst} } \sigma \le \rho }%
+}{
+ \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \sigma  \le  \left[  \ottmv{a}  \mapsto  \tau  \right]  \rho  }{%
+{\ottdrulename{inst\_open\_poly}}{}%
+}}
+
+\newcommand{\ottdefninst}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{inst} } \sigma \le \rho $}{}
+\ottusedrule{\ottdruleinstXXopenXXrefl{}}
+\ottusedrule{\ottdruleinstXXopenXXpoly{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsJInst}{
+\ottdefninst{}}
+
 \newcommand{\ottdefnss}{
 \ottdefnsJTyping
 \ottdefnsJStep
+\ottdefnsJInst
 }
 
 \newcommand{\ottall}{\ottmetavars\\[0pt]
@@ -339,7 +371,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        17 good    0 bad
-Definition rule clauses: 33 good    0 bad
+Definition rules:        19 good    0 bad
+Definition rule clauses: 36 good    0 bad
 \end{verbatim}
 \end{document}

@@ -39,15 +39,15 @@ ty_rho {{ tex \text{Rho-types} }}, rho {{ tex \rho }} :: 'ty_rho_' ::= {{ com Rh
     {{ tex ([[rho]]) }}
     {{ coq ([[rho]]) }}
 
+  | [ a |-> tau ] rho      :: M :: subst
+    {{ tex \left[ [[a]] \mapsto [[tau]] \right] [[rho]] }}
+    {{ coq (open_ty_rho_wrt_ty_mono[[a rho]][[tau]])}}
+
 ty_poly {{ tex \text{Polytypes} }}, sig {{ tex \sigma }} :: 'ty_poly_' ::=
   | rho                     :: :: rho
   | forall a . sig          :: :: poly_gen
     (+ bind a in sig +)
     {{ tex \forall [[a]] . [[sig]] }}
-
-  | [ a |-> tau ] sig      :: M :: subst
-    {{ tex \left[ [[a]] \mapsto [[tau]] \right] [[sig]] }}
-    {{ coq (open_ty_poly_wrt_ty_mono[[a sig]][[tau]])}}
 
 tm {{ tex \text{Terms} }}, t, u :: 'exp_' ::= 
   | i                     ::    :: lit
@@ -272,3 +272,19 @@ by
 
 ------------------- :: erase
  annot t sig --> t
+
+
+defns
+JInst :: '' ::=
+
+defn
+|-inst sig <= rho :: :: inst :: 'inst_'
+{{ tex \vdash^{\text{inst} }[[sig]]\le[[rho]] }}
+by
+
+-------------------------------------------- :: open_refl
+ |-inst rho <= rho
+
+ |-inst sig <= rho
+-------------------------------------------- :: open_poly
+ |-inst forall a . sig <= [ a |-> tau ] rho

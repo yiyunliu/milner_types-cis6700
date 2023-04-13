@@ -50,12 +50,13 @@
 \ottrulehead{\text{Rho-types}  ,\ \rho}{::=}{\ottcom{Rho-types}}\ottprodnewline
 \ottfirstprodline{|}{\tau}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ ( \rho ) } {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{ \left[  \ottmv{a}  \mapsto  \tau  \right]  \rho } {\textsf{M}}{}{}{}}
+\ottprodline{|}{ \left[  \ottmv{a}  \mapsto  \tau  \right]  \ottkw{rhp} } {\textsf{M}}{}{}{}}
 
 \newcommand{\otttyXXpoly}{
 \ottrulehead{\text{Polytypes}  ,\ \sigma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\rho}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \forall  \ottmv{a}  .  \sigma }{}{\textsf{bind}\; \ottmv{a}\; \textsf{in}\; \sigma}{}{}}
+\ottprodline{|}{ \forall  \ottmv{a}  .  \sigma }{}{\textsf{bind}\; \ottmv{a}\; \textsf{in}\; \sigma}{}{}\ottprodnewline
+\ottprodline{|}{ \left[  \ottmv{a}  \mapsto  \tau  \right]  \sigma } {\textsf{M}}{}{}{}}
 
 \newcommand{\otttm}{
 \ottrulehead{\text{Terms}  ,\ \ottnt{t}  ,\ \ottnt{u}}{::=}{}\ottprodnewline
@@ -218,17 +219,17 @@
 
 
 \newcommand{\ottdruletypXXgen}[1]{\ottdrule[#1]{%
-\ottpremise{ \Gamma \vdash \ottnt{t} : \rho }%
+\ottpremise{ \Gamma \vdash \ottnt{t} : \sigma }%
 }{
- \Gamma \vdash \ottnt{t} :  \forall  \ottmv{a}  .  \rho  }{%
+ \Gamma \vdash \ottnt{t} :  \forall  \ottmv{a}  .  \sigma  }{%
 {\ottdrulename{typ\_gen}}{}%
 }}
 
 
 \newcommand{\ottdruletypXXinst}[1]{\ottdrule[#1]{%
-\ottpremise{ \Gamma \vdash \ottnt{t} :  \forall  \ottmv{a}  .  \rho  }%
+\ottpremise{ \Gamma \vdash \ottnt{t} :  \forall  \ottmv{a}  .  \sigma  }%
 }{
- \Gamma \vdash \ottnt{t} :  \left[  \ottmv{a}  \mapsto  \tau  \right]  \rho  }{%
+ \Gamma \vdash \ottnt{t} :  \left[  \ottmv{a}  \mapsto  \tau  \right]  \sigma  }{%
 {\ottdrulename{typ\_inst}}{}%
 }}
 
@@ -334,23 +335,34 @@
 
 % defns JInst
 %% defn inst
-\newcommand{\ottdruleinstXXopenXXrefl}[1]{\ottdrule[#1]{%
+\newcommand{\ottdruleinstXXrefl}[1]{\ottdrule[#1]{%
+\ottpremise{ \mathsf{lc}\, \rho }%
 }{
  \vdash^{\text{inst} } \rho \le \rho }{%
-{\ottdrulename{inst\_open\_refl}}{}%
+{\ottdrulename{inst\_refl}}{}%
 }}
 
 
-\newcommand{\ottdruleinstXXopenXXpoly}[1]{\ottdrule[#1]{%
-\ottpremise{ \vdash^{\text{inst} } \sigma \le \rho }%
+\newcommand{\ottdruleinstXXopen}[1]{\ottdrule[#1]{%
+\ottpremise{ \mathsf{lc}\,  \left[  \ottmv{a}  \mapsto  \tau  \right]  \ottkw{rhp}  }%
 }{
- \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \sigma  \le  \left[  \ottmv{a}  \mapsto  \tau  \right]  \rho  }{%
-{\ottdrulename{inst\_open\_poly}}{}%
+ \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \rho  \le  \left[  \ottmv{a}  \mapsto  \tau  \right]  \ottkw{rhp}  }{%
+{\ottdrulename{inst\_open}}{}%
+}}
+
+
+\newcommand{\ottdruleinstXXpoly}[1]{\ottdrule[#1]{%
+\ottpremise{ \mathsf{lc}\, \tau }%
+\ottpremise{ \vdash^{\text{inst} }  \left[  \ottmv{a}  \mapsto  \tau  \right]  \sigma  \le \rho }%
+}{
+ \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \sigma  \le \rho }{%
+{\ottdrulename{inst\_poly}}{}%
 }}
 
 \newcommand{\ottdefninst}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{inst} } \sigma \le \rho $}{}
-\ottusedrule{\ottdruleinstXXopenXXrefl{}}
-\ottusedrule{\ottdruleinstXXopenXXpoly{}}
+\ottusedrule{\ottdruleinstXXrefl{}}
+\ottusedrule{\ottdruleinstXXopen{}}
+\ottusedrule{\ottdruleinstXXpoly{}}
 \end{ottdefnblock}}
 
 
@@ -371,7 +383,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        19 good    0 bad
-Definition rule clauses: 36 good    0 bad
+Definition rules:        20 good    0 bad
+Definition rule clauses: 40 good    0 bad
 \end{verbatim}
 \end{document}

@@ -353,13 +353,13 @@ Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
       lc_ty_poly sig  /\ ftv_mono_ty_poly sig [=]{}  ->
      typing G t sig ->
      typing G  ( (exp_type_anno t sig) )  sig
- | typ_gen : forall (L:vars) (G:ctx) (t:tm) (rho:ty_rho),
-      ( forall a , a \notin  L  -> typing G t (ty_poly_rho  ( open_ty_rho_wrt_ty_mono rho (ty_mono_var_f a) ) ) )  ->
-     typing G t (ty_poly_poly_gen (ty_poly_rho rho))
- | typ_inst : forall (G:ctx) (t:tm) (tau:ty_mono) (rho:ty_rho),
+ | typ_gen : forall (L:vars) (G:ctx) (t:tm) (sig:ty_poly),
+      ( forall a , a \notin  L  -> typing G t  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  )  ->
+     typing G t (ty_poly_poly_gen sig)
+ | typ_inst : forall (G:ctx) (t:tm) (tau:ty_mono) (sig:ty_poly),
      lc_ty_mono tau ->
-     typing G t (ty_poly_poly_gen (ty_poly_rho rho)) ->
-     typing G t (ty_poly_rho  (open_ty_rho_wrt_ty_mono rho tau ) ).
+     typing G t (ty_poly_poly_gen sig) ->
+     typing G t  (open_ty_poly_wrt_ty_mono sig tau ) .
 
 (* defns JStep *)
 Inductive step : tm -> tm -> Prop :=    (* defn step *)
@@ -407,13 +407,16 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
 
 (* defns JInst *)
 Inductive inst : ty_poly -> ty_rho -> Prop :=    (* defn inst *)
- | inst_open_refl : forall (rho:ty_rho),
-     lc_ty_rho rho ->
+ | inst_refl : forall (rho:ty_rho),
+      lc_ty_poly (ty_poly_rho rho)  /\ ftv_mono_ty_poly (ty_poly_rho rho) [=]{}  ->
      inst (ty_poly_rho rho) rho
- | inst_open_poly : forall (L:vars) (sig:ty_poly) (tau:ty_mono) (rho:ty_rho),
-     lc_ty_mono tau ->
-      ( forall a , a \notin  L  -> inst  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  rho )  ->
-     inst (ty_poly_poly_gen sig)  (open_ty_rho_wrt_ty_mono rho tau ) .
+ | inst_open : forall (rho:ty_rho) (tau:ty_mono),
+      lc_ty_poly (ty_poly_rho  (open_ty_rho_wrt_ty_mono rho tau ) )  /\ ftv_mono_ty_poly (ty_poly_rho  (open_ty_rho_wrt_ty_mono rho tau ) ) [=]{}  ->
+     inst (ty_poly_poly_gen (ty_poly_rho rho))  (open_ty_rho_wrt_ty_mono rho tau ) 
+ | inst_poly : forall (sig:ty_poly) (rho:ty_rho) (tau:ty_mono),
+      lc_ty_poly (ty_poly_rho (ty_rho_tau tau))  /\ ftv_mono_ty_poly (ty_poly_rho (ty_rho_tau tau)) [=]{}  ->
+     inst  (open_ty_poly_wrt_ty_mono sig tau )  rho ->
+     inst (ty_poly_poly_gen sig) rho.
 
 
 (** infrastructure *)

@@ -39,15 +39,19 @@ ty_rho {{ tex \text{Rho-types} }}, rho {{ tex \rho }} :: 'ty_rho_' ::= {{ com Rh
     {{ tex ([[rho]]) }}
     {{ coq ([[rho]]) }}
 
-  | [ a |-> tau ] rho      :: M :: subst
-    {{ tex \left[ [[a]] \mapsto [[tau]] \right] [[rho]] }}
-    {{ coq (open_ty_rho_wrt_ty_mono[[a rho]][[tau]])}}
+  % | r[ a |-> tau ] rho      :: M :: subst
+  %   {{ tex \left[ [[a]] \mapsto [[tau]] \right] [[rhp]] }}
+  %   {{ coq (open_ty_rho_wrt_ty_mono[[a rho]][[tau]])}}
 
 ty_poly {{ tex \text{Polytypes} }}, sig {{ tex \sigma }} :: 'ty_poly_' ::=
   | rho                     :: :: rho
   | forall a . sig          :: :: poly_gen
     (+ bind a in sig +)
     {{ tex \forall [[a]] . [[sig]] }}
+
+  | [ a |-> tau ] sig      :: M :: subst
+    {{ tex \left[ [[a]] \mapsto [[tau]] \right] [[sig]] }}
+    {{ coq (open_ty_poly_wrt_ty_mono[[a sig]][[tau]])}}
 
 tm {{ tex \text{Terms} }}, t, u :: 'exp_' ::= 
   | i                     ::    :: lit
@@ -223,14 +227,14 @@ by
 --------------------------- :: annot
  G |- (annot t sig) : sig
 
-%  b notin ftv (G)
- G |- t : rho
+%  a notin ftv (G)
+ G |- t : sig
 ------------------------- :: gen
- G |- t : forall a . rho
+ G |- t : forall a . sig
 
- G |- t : forall a . rho
+ G |- t : forall a . sig
 ------------------------------ :: inst
- G |- t : [ a |-> tau ] rho
+ G |- t : [ a |-> tau ] sig
 
 
 defns 
@@ -278,13 +282,48 @@ defns
 JInst :: '' ::=
 
 defn
-|-inst sig <= rho :: :: inst :: 'inst_'
-{{ tex \vdash^{\text{inst} }[[sig]]\le[[rho]] }}
+|-inst sig1 <= rho :: :: inst :: 'inst_'
+{{ tex \vdash^{\text{inst} }[[sig1]]\le[[rho]] }}
 by
-
--------------------------------------------- :: open_refl
+%  closed rho
+--------------------------------------------- :: refl
  |-inst rho <= rho
 
- |-inst sig <= rho
--------------------------------------------- :: open_poly
- |-inst forall a . sig <= [ a |-> tau ] rho
+% %  closed r[ a |-> tau ] rho
+% --------------------------------------------- :: open
+%  |-inst forall a . sig <= [ a |-> tau ] sig
+
+%  closed tau
+ |-inst [ a |-> tau ] sig <= rho
+--------------------------------------------- :: trans
+ |-inst forall a . sig <= rho
+
+% defns
+% JInstStep :: '' ::=
+
+% defn
+% |-inst sig1 < sig2 :: :: inst :: 'inst_'
+% {{ tex \vdash^{\text{inst} }[[sig1]]\le[[sig2]] }}
+% by
+% ---------------------------------------------- :: open
+%  |-inst forall a . sig < r[ a |-> tau ] sig
+
+% defns
+% JInst :: '' ::=
+
+% defn
+% |-inst sig <= rho :: :: inst :: 'inst_'
+% {{ tex \vdash^{\text{inst} }[[sig]]\le[[rho]] }}
+% by
+
+% -------------------------------------------- :: refl
+%  |-inst rho <= rho
+
+%  |-inst sig < rho
+% -------------------------------------------- :: step
+%  |-inst sig <= rho
+
+%  |-inst sig2 <= rho
+%  |-inst sig3 <= sig2
+% -------------------------------------------- :: trans
+%  |-inst sig3 <= rho

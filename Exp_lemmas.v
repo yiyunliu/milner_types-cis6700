@@ -473,10 +473,13 @@ Proof.
       ++ assumption.
 Qed.
 
+(* Well-typed terms are locally closed. *)
 Lemma typing_to_lc_tm : forall E e T,
     typing E e T -> lc_tm e.
 Proof.
-  Admitted.
+  intros E e T H.
+  induction H; eauto.
+  Admitted. (* TODO *)
 
 (** Substitution lemma *)      
 Lemma typing_subst : forall (E F : ctx) e u S T (z : atom), 
@@ -513,10 +516,12 @@ Proof.
     simpl_env. reflexivity.
     auto.
     eapply typing_to_lc_tm. apply Hu.
-  - intros F Heq. simpl. eapply typ_app.
+  - (* typ_app *)
+    intros F Heq. simpl. eapply typ_app.
     ++ apply (IHHe1 _ Heq).
     ++ apply (IHHe2 _ Heq).
-  - intros F Heq. eapply typ_let with (L := {{z}} \u L).  (* pick fresh x and apply typ_let. *) fold subst_tm.
+  - (* typ_let *)
+    intros F Heq. eapply typ_let with (L := {{z}} \u L).  (* pick fresh x and apply typ_let. *) fold subst_tm.
     ++ eauto.
     ++ fold subst_tm. intros x Fry.
        rewrite subst_var.
@@ -526,10 +531,15 @@ Proof.
        subst. auto.
        auto.
        eapply typing_to_lc_tm. apply Hu.
-  - simpl. admit.
-  - intros F Heq.
-    
-Admitted.
+  - (* exp_type_anno *)
+    intros F Heq.
+    eapply typ_annot; auto.
+  - (* typ_gen *)
+    intros F Heq.
+    pick fresh x and apply typ_gen.
+    apply H0; eauto.
+Qed.
+
 
 (* Simplified version of the substitution lemma *)
 Lemma typing_subst_simple : forall (E : ctx) e u S T (z : atom),

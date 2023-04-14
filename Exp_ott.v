@@ -408,13 +408,9 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
 (* defns JInst *)
 Inductive inst : ty_poly -> ty_rho -> Prop :=    (* defn inst *)
  | inst_refl : forall (rho:ty_rho),
-      lc_ty_poly (ty_poly_rho rho)  /\ ftv_mono_ty_poly (ty_poly_rho rho) [=]{}  ->
+     lc_ty_rho rho ->
      inst (ty_poly_rho rho) rho
- | inst_open : forall (rho:ty_rho) (tau:ty_mono),
-      lc_ty_poly (ty_poly_rho  (open_ty_rho_wrt_ty_mono rho tau ) )  /\ ftv_mono_ty_poly (ty_poly_rho  (open_ty_rho_wrt_ty_mono rho tau ) ) [=]{}  ->
-     inst (ty_poly_poly_gen (ty_poly_rho rho))  (open_ty_rho_wrt_ty_mono rho tau ) 
- | inst_poly : forall (sig:ty_poly) (rho:ty_rho) (tau:ty_mono),
-      lc_ty_poly (ty_poly_rho (ty_rho_tau tau))  /\ ftv_mono_ty_poly (ty_poly_rho (ty_rho_tau tau)) [=]{}  ->
+ | inst_trans : forall (sig:ty_poly) (rho:ty_rho) (tau:ty_mono),
      inst  (open_ty_poly_wrt_ty_mono sig tau )  rho ->
      inst (ty_poly_poly_gen sig) rho.
 

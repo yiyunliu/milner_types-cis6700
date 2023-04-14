@@ -49,8 +49,7 @@
 \newcommand{\otttyXXrho}{
 \ottrulehead{\text{Rho-types}  ,\ \rho}{::=}{\ottcom{Rho-types}}\ottprodnewline
 \ottfirstprodline{|}{\tau}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ ( \rho ) } {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{ \left[  \ottmv{a}  \mapsto  \tau  \right]  \ottkw{rhp} } {\textsf{M}}{}{}{}}
+\ottprodline{|}{ ( \rho ) } {\textsf{S}}{}{}{}}
 
 \newcommand{\otttyXXpoly}{
 \ottrulehead{\text{Polytypes}  ,\ \sigma}{::=}{}\ottprodnewline
@@ -122,7 +121,7 @@
 
 \newcommand{\ottJInst}{
 \ottrulehead{\ottnt{JInst}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \vdash^{\text{inst} } \sigma \le \rho }{}{}{}{}}
+\ottfirstprodline{|}{ \vdash^{\text{inst} } \sigma_{{\mathrm{1}}} \le \rho }{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
@@ -336,33 +335,22 @@
 % defns JInst
 %% defn inst
 \newcommand{\ottdruleinstXXrefl}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{lc}\, \rho }%
 }{
  \vdash^{\text{inst} } \rho \le \rho }{%
 {\ottdrulename{inst\_refl}}{}%
 }}
 
 
-\newcommand{\ottdruleinstXXopen}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{lc}\,  \left[  \ottmv{a}  \mapsto  \tau  \right]  \ottkw{rhp}  }%
-}{
- \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \rho  \le  \left[  \ottmv{a}  \mapsto  \tau  \right]  \ottkw{rhp}  }{%
-{\ottdrulename{inst\_open}}{}%
-}}
-
-
-\newcommand{\ottdruleinstXXpoly}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{lc}\, \tau }%
+\newcommand{\ottdruleinstXXtrans}[1]{\ottdrule[#1]{%
 \ottpremise{ \vdash^{\text{inst} }  \left[  \ottmv{a}  \mapsto  \tau  \right]  \sigma  \le \rho }%
 }{
  \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \sigma  \le \rho }{%
-{\ottdrulename{inst\_poly}}{}%
+{\ottdrulename{inst\_trans}}{}%
 }}
 
-\newcommand{\ottdefninst}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{inst} } \sigma \le \rho $}{}
+\newcommand{\ottdefninst}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{inst} } \sigma_{{\mathrm{1}}} \le \rho $}{}
 \ottusedrule{\ottdruleinstXXrefl{}}
-\ottusedrule{\ottdruleinstXXopen{}}
-\ottusedrule{\ottdruleinstXXpoly{}}
+\ottusedrule{\ottdruleinstXXtrans{}}
 \end{ottdefnblock}}
 
 
@@ -383,7 +371,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        20 good    0 bad
-Definition rule clauses: 40 good    0 bad
+Definition rules:        19 good    0 bad
+Definition rule clauses: 36 good    0 bad
 \end{verbatim}
 \end{document}

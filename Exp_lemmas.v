@@ -66,40 +66,42 @@ Ltac gather_atoms ::=
 (** Lemmas, manually added *)
 (*************************************************************************)
 
-Lemma gen_inst_int: forall tau sig x,
-  inst (subst_ty_mono_ty_poly tau x sig) (ty_rho_tau ty_mono_base) 
-    -> inst sig (ty_rho_tau ty_mono_base).
-Proof.
-  intros tau sig x Hinst. dependent induction Hinst; intros.
-  - destruct sig.
-    + destruct rho. simpl in x. inversion x. clear x; simpl in H1.
-    admit.
-      (* destruct subst_ty_mono_ty_mono_fresh_eq in H1...
-      destruct tau0; try discriminate. exists tau0_1. exists tau0_2.
-      constructor. rewrite H1 in H... admit. *)
-    + simpl in x. discriminate.
-  - admit.
-  Admitted.
+(* Lemma gen_inst_int: forall tau sig x, *)
+(*   inst (subst_ty_mono_ty_poly tau x sig) (ty_rho_tau ty_mono_base)  *)
+(*     -> inst sig (ty_rho_tau ty_mono_base). *)
+(* Proof. *)
+(*   intros tau sig x Hinst. dependent induction Hinst; intros. *)
+(*   - destruct sig. *)
+(*     + destruct rho. simpl in x. inversion x. clear x; simpl in H1. *)
+(*     admit. *)
+(*       (* destruct subst_ty_mono_ty_mono_fresh_eq in H1... *)
+(*       destruct tau0; try discriminate. exists tau0_1. exists tau0_2. *)
+(*       constructor. rewrite H1 in H... admit. *) *)
+(*     + simpl in x. discriminate. *)
+(*   - admit. *)
+(*   Admitted. *)
 
-Lemma canonical_forms_int : forall (t : tm) T,
-    typing empty t T ->
-    inst T (ty_rho_tau ty_mono_base) ->
-    is_value_of_tm t ->
-    exists (i : integer), t = exp_lit i.
-Proof with eauto.
-  intros t T Ht Hi Hv. generalize dependent Hi.
-  dependent induction Ht; intros; try destruct Hv...
-  - inversion Hi; subst.
-  - pick fresh x.
-    specialize (H x ltac:(auto)). specialize (H0 x ltac:(auto) ltac:(eauto) Hv).
-    inversion Hi; subst.
-    rewrite (subst_ty_mono_ty_poly_intro x) in H2.
-    apply (gen_inst_int _ _ x) in H2.
-    apply (H0 H2). fsetdec.
-Qed.
+(* Lemma canonical_forms_int : forall (t : tm) T, *)
+(*     typing empty t T -> *)
+(*     inst T (ty_rho_tau ty_mono_base) -> *)
+(*     is_value_of_tm t -> *)
+(*     exists (i : integer), t = exp_lit i. *)
+(* Proof with eauto. *)
+(*   intros t T Ht Hi Hv. generalize dependent Hi. *)
+(*   dependent induction Ht; intros; try destruct Hv... *)
+(*   - inversion Hi; subst. *)
+(*   - pick fresh x. *)
+(*     specialize (H x ltac:(auto)). specialize (H0 x ltac:(auto) ltac:(eauto) Hv). *)
+(*     inversion Hi; subst. *)
+(*     specialize H2 with x. *)
+(*     rewrite (subst_ty_mono_ty_poly_intro x) in H2. *)
+(*     apply (gen_inst_int _ _ x) in H2. *)
+(*     apply (H0 H2). admit. fsetdec. *)
+(*   - *)
+(* Qed. *)
 
 Lemma gen_inst_fun: forall tau sig T1 T2 x,
-  inst (subst_ty_mono_ty_poly tau x sig) (ty_rho_tau (ty_mono_func T1 T2)) 
+  inst (subst_ty_mono_ty_poly tau x sig) (ty_rho_tau (ty_mono_func T1 T2))
     -> exists T1' T2', inst sig (ty_rho_tau (ty_mono_func T1' T2')) .
 Proof with eauto.
   intros tau sig T1 T2 x Hinst. dependent induction Hinst; intros.
@@ -107,15 +109,20 @@ Proof with eauto.
     + destruct rho. simpl in x. inversion x. clear x; simpl in H1.
       rewrite subst_ty_mono_ty_mono_fresh_eq in H1...
       destruct tau0; try discriminate. exists tau0_1. exists tau0_2.
-      constructor. rewrite H1 in H... admit.
+      constructor. rewrite H1 in H...
+      induction tau0; simpl in H1; try discriminate. destruct (a == x0).
+      ++ inversion H; subst. inversion H2; subst. (* Don't know how to proceed *) admit.
+      ++ discriminate.
+      ++ simpl.
+         Search union. injection H1; intros. admit. (* apply notin_union_3. *)
     + simpl in x. discriminate.
   - destruct sig.
     + simpl in x. discriminate.
-    + simpl in x. inversion x; subst. clear x.
-      specialize (IHHinst tau (open_ty_poly_wrt_ty_mono sig tau0) T1 T2 x0).
-      rewrite subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono in IHHinst.
-      rewrite subst_ty_mono_ty_mono_fresh_eq in IHHinst...
-      specialize (IHHinst ltac:(eauto) ltac:(eauto)).
+    + (* simpl in x. inversion x; subst. clear x. *)
+      (* specialize (IHHinst tau (open_ty_poly_wrt_ty_mono sig tau0) T1 T2 x0). *)
+      (* rewrite subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono in IHHinst. *)
+      (* rewrite subst_ty_mono_ty_mono_fresh_eq in IHHinst... *)
+      (* specialize (IHHinst ltac:(eauto) ltac:(eauto)). *)
       (* rewrite ftv_mono_ty_poly_open_ty_poly_wrt_ty_mono_upper in IHHinst. *)
       
       admit.
@@ -125,21 +132,27 @@ Admitted.
 Theorem canonical_forms_fun: forall t T,
   typing empty t T
     -> forall T1 T2, inst T (ty_rho_tau (ty_mono_func T1 T2))
-    -> is_value_of_tm t 
+    -> is_value_of_tm t
     -> exists u, t = exp_abs u.
 Proof with eauto.
   intros t T Ht.
-  dependent induction Ht; subst; try discriminate; intros; 
-  try (inversion H; eauto);
-  try (inversion H0; eauto);
-  try (inversion H1; eauto);
-  try (inversion H2; eauto).
-  - pick fresh x.
+  dependent induction Ht; subst; try discriminate; intros.
+  - inversion H.
+  - inversion H2.
+  - exists t. reflexivity.
+  - inversion H0.
+  - inversion H2.
+  - inversion H1.
+  - inversion H1; subst.
+    pick fresh x.
     specialize (H0 x ltac:(auto) ltac:(auto)).
+    specialize (H4 x ltac:(auto)).
     rewrite (subst_ty_mono_ty_poly_intro x) in H4.
     apply gen_inst_fun in H4. destruct H4 as [T1' [T2' H4]].
     specialize (H0 T1' T2' H4 H2)... fsetdec.
+  - inversion H0; eauto.
 Qed.
+
 
 Lemma empty_ctx_typing_lc: forall e T,
   typing empty e T -> lc_tm e.
@@ -164,13 +177,13 @@ Admitted.
 
 #[export] Hint Resolve empty_ctx_typing_lc : core.
 
-(* Lemma empty_ctx_typing_closed: forall e T, *)
-(*   typing empty e T -> fv_tm e [=] {}. *)
-(* Proof with eauto. *)
-(*   intros e T H. *)
-(*   assert (Hlc: lc_tm e)... *)
-(*   induction H; subst; simpl in *; try fsetdec. *)
-(* Admitted. *)
+Lemma empty_ctx_typing_closed: forall e T,
+  typing empty e T -> fv_tm e [=] {}.
+Proof with eauto.
+  intros e T H.
+  assert (Hlc: lc_tm e)...
+  induction H; subst; simpl in *; try fsetdec.
+Admitted.
 
 Theorem progress : forall e T,
   typing empty e T ->
@@ -180,7 +193,17 @@ Proof with eauto.
   remember empty as G.
   induction H0; subst;
   try (left; constructor)...
-  - right; destruct IHtyping1; destruct IHtyping2...
+  - right.
+    destruct IHtyping1 as [V1 | [e1' Step1]]; auto.
+    + destruct t; inversion V1; subst.
+      ++ inversion H0_; subst.
+      exists (open_tm_wrt_tm )
+
+
+
+
+
+    right; destruct IHtyping1; destruct IHtyping2...
     + assert (Hlam: exists u, t = exp_abs u).
       { apply (canonical_forms_fun t _ H0_ tau1 tau2)... constructor.
         eapply empty_ctx_typing_lc_ty in H0_. inversion H0_... }

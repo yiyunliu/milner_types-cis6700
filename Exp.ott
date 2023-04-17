@@ -294,7 +294,7 @@ by
 %  |-inst forall a . sig <= [ a |-> tau ] sig
 
 %  closed tau
- |-inst [ a |-> tau ] sig <= rho
+ |-inst [a |-> tau]sig <= rho
 --------------------------------------------- :: trans
  |-inst forall a . sig <= rho
 

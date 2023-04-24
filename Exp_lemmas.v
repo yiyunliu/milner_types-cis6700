@@ -100,6 +100,24 @@ Ltac gather_atoms ::=
 (*   - *)
 (* Qed. *)
 
+(* Lemma gen_inst_fun: forall tau sig T1 T2 x, *)
+(*   inst (subst_ty_mono_ty_poly tau x sig) (ty_rho_tau (ty_mono_func T1 T2))  *)
+(*     -> (exists T1' T2', inst sig (ty_rho_tau (ty_mono_func T1' T2'))) \/ *)
+(*         sig = ty_poly_rho (ty_rho_tau (ty_mono_var_f x)). *)
+(* Proof with eauto. *)
+(*   intros tau sig T1 T2 x Hinst. dependent induction Hinst; intros. *)
+(*   - destruct sig. *)
+(*     + destruct rho. simpl in x. inversion x. clear x; simpl in H1. *)
+(*       rewrite subst_ty_mono_ty_mono_fresh_eq in H1... *)
+(*       destruct tau0; try discriminate. left. exists tau0_1. exists tau0_2. *)
+(*       constructor. rewrite H1 in H... *)
+(*       induction tau0; simpl in H1; try discriminate. destruct (a == x0). *)
+(*       ++ inversion H; subst. inversion H2; subst.  (* Don't know how to proceed *) admit. *)
+(*       ++ discriminate. *)
+(*       ++ simpl. *)
+(*          Search union. injection H1; intros. admit. (* apply notin_union_3. *) constructor. rewrite *)
+
+
 Lemma gen_inst_fun: forall tau sig T1 T2 x,
   inst (subst_ty_mono_ty_poly tau x sig) (ty_rho_tau (ty_mono_func T1 T2))
     -> exists T1' T2', inst sig (ty_rho_tau (ty_mono_func T1' T2')) .
@@ -111,14 +129,22 @@ Proof with eauto.
       destruct tau0; try discriminate. exists tau0_1. exists tau0_2.
       constructor. rewrite H1 in H...
       induction tau0; simpl in H1; try discriminate. destruct (a == x0).
-      ++ inversion H; subst. inversion H2; subst. (* Don't know how to proceed *) admit.
+      ++ destruct tau; try discriminate. injection H1; intros; subst.
+         inversion H; subst. inversion H2; subst. 
+         (* Don't know how to proceed *) admit.
       ++ discriminate.
       ++ simpl.
          Search union. injection H1; intros. admit. (* apply notin_union_3. *)
     + simpl in x. discriminate.
   - destruct sig.
     + simpl in x. discriminate.
-    + (* simpl in x. inversion x; subst. clear x. *)
+    + eexists. eexists. eapply inst_trans. 
+
+
+
+
+
+      (* simpl in x. inversion x; subst. clear x. *)
       (* specialize (IHHinst tau (open_ty_poly_wrt_ty_mono sig tau0) T1 T2 x0). *)
       (* rewrite subst_ty_mono_ty_poly_open_ty_poly_wrt_ty_mono in IHHinst. *)
       (* rewrite subst_ty_mono_ty_mono_fresh_eq in IHHinst... *)
@@ -146,7 +172,6 @@ Proof with eauto.
   - inversion H1; subst.
     pick fresh x.
     specialize (H0 x ltac:(auto) ltac:(auto)).
-    specialize (H4 x ltac:(auto)).
     rewrite (subst_ty_mono_ty_poly_intro x) in H4.
     apply gen_inst_fun in H4. destruct H4 as [T1' [T2' H4]].
     specialize (H0 T1' T2' H4 H2)... fsetdec.
@@ -172,7 +197,19 @@ Proof with eauto.
   intros e T H.
   dependent induction H; subst...
   - destruct H0...
-  - admit.
+  - pick fresh x. apply notin_union_1 in Fr as Fr0. specialize H0 with x. apply H0 in Fr0 as H1.
+    + repeat constructor.
+      ++ (* specialize H with x. apply H in Fr0 as H2. destruct tau1; try constructor. *)
+        (* +++ simpl in H2. inversion H2. *) admit.
+      ++ inversion H1; subst. inversion H3; subst. auto.
+    + simpl. admit.
+  - Search "~=". 
+
+
+
+
+
+    admit.
 Admitted.
 
 #[export] Hint Resolve empty_ctx_typing_lc : core.
@@ -193,17 +230,7 @@ Proof with eauto.
   remember empty as G.
   induction H0; subst;
   try (left; constructor)...
-  - right.
-    destruct IHtyping1 as [V1 | [e1' Step1]]; auto.
-    + destruct t; inversion V1; subst.
-      ++ inversion H0_; subst.
-      exists (open_tm_wrt_tm )
-
-
-
-
-
-    right; destruct IHtyping1; destruct IHtyping2...
+  - right; destruct IHtyping1; destruct IHtyping2...
     + assert (Hlam: exists u, t = exp_abs u).
       { apply (canonical_forms_fun t _ H0_ tau1 tau2)... constructor.
         eapply empty_ctx_typing_lc_ty in H0_. inversion H0_... }
@@ -237,7 +264,7 @@ Proof.
   intros E F G t T H.
   remember (G ++ E) as E'.
   generalize dependent G.
-  induction H; intros G0 Eq Uniq; subst; eauto.
+  induction H; intros G0 Eq Uniq; subst; auto.
   - (* exp_abs *) 
     apply typ_abs with (L := dom (G0 ++ F ++ E) \u L).
     intros x Frx.
@@ -248,6 +275,7 @@ Proof.
     + simpl_env. apply uniq_push.
       * assumption.
       * auto.
+  - eauto.
   - (* exp_let *) 
     apply (typ_let (dom (G0 ++ F ++ E) \u L) _ u t rho sig).
     + auto.
@@ -259,6 +287,7 @@ Proof.
       * simpl_env. apply uniq_push.
         -- assumption.
         -- auto.
+  - eauto. Unshelve. apply L.
 Qed. 
  
 (** Original statemnent of the weakening lemma *)
@@ -421,7 +450,8 @@ forall t3 t1 t2 x1,
   subst_tm t1 x1 (open_tm_wrt_tm t3 t2) = open_tm_wrt_tm (subst_tm t1 x1 t3) (subst_tm t1 x1 t2).
 Proof.
    unfold open_tm_wrt_tm;
-   default_simp.
+     default_simp.
+   
    Admitted. (* TODO: not sure how to proceed *) 
 
 (** Corollary of the above lemma for fresh variables. *)  
@@ -514,8 +544,13 @@ Lemma typing_to_lc_tm : forall E e T,
     typing E e T -> lc_tm e.
 Proof.
   intros E e T H.
-  induction H; eauto.
-  Admitted. (* TODO *)
+  dependent induction H; eauto.
+  - constructor.
+    + auto.
+    + destruct H. auto.
+  - pick fresh x. apply H0 with x.
+    apply notin_union_1 in Fr. auto.
+Qed.
 
 (** Substitution lemma *)      
 Lemma typing_subst : forall (E F : ctx) e u S T (z : atom), 
@@ -596,7 +631,7 @@ Theorem preservation : forall (E : ctx) e e' T,
     -> step e e'
     -> typing E e' T.
 Proof with eauto.
-  intros E e e' T Htyp Hstep.
+  intros E e e' T Htyp.
   generalize dependent e'.
   induction Htyp; intros e' J...
   - (* Literals don't step *) 
@@ -605,16 +640,26 @@ Proof with eauto.
     inversion J.
   - (* Abs case *)
     inversion J.
-  - (* App case *) 
+  - (* App case *)
     inversion J; subst; eauto.
     + inversion Htyp1; subst.
-      * pick fresh y for (L \u fv_tm t0).
-        rewrite (subst_tm_intro y); auto.
-        eapply typing_subst_simple; auto.
-      * admit.
-        (* TODO: not sure how to prove typing derivations involving opening of terms *)
-    + inversion Htyp1; subst.
-      admit. (* TODO: same problem as above *) 
+      ++ pick fresh x. rewrite (subst_tm_intro x); auto. eapply typing_subst_simple; auto.
+      ++ 
+
+
+        pick fresh x. rewrite (subst_tm_intro x); auto. eapply typing_subst_simple; eauto. simpl.
+         Print typing.
+         admit.
+    + admit.
+    (* inversion J; subst; eauto. *)
+    (* + inversion Htyp1; subst. *)
+    (*   * pick fresh y for (L \u fv_tm t0). *)
+    (*     rewrite (subst_tm_intro y); auto. *)
+    (*     eapply typing_subst_simple; auto. *)
+    (*   * admit. *)
+    (*     (* TODO: not sure how to prove typing derivations involving opening of terms *) *)
+    (* + inversion Htyp1; subst. *)
+    (*   admit. (* TODO: same problem as above *)  *)
   - (* Let case *)
     inversion J; subst; eauto.
     admit. (* TODO *)

@@ -172,11 +172,35 @@ Proof with eauto.
   - inversion H1; subst.
     pick fresh x.
     specialize (H0 x ltac:(auto) ltac:(auto)).
+    specialize (H4 x ltac:(auto)).
     rewrite (subst_ty_mono_ty_poly_intro x) in H4.
     apply gen_inst_fun in H4. destruct H4 as [T1' [T2' H4]].
     specialize (H0 T1' T2' H4 H2)... fsetdec.
-  - inversion H0; eauto.
-Qed.
+  - pick fresh x. rewrite (subst_ty_mono_ty_poly_intro x) in H0.
+    eapply gen_inst_fun in H0. destruct H0 as [T1' [T2' H2]].
+    apply IHHt with T1' T2'; eauto. econstructor. intros. admit.
+    auto. Unshelve. apply (fv_tm t).
+Admitted.
+
+(*     econstructor. *)
+(*     +  *)
+
+
+
+
+(*     pick fresh x. *)
+(*     rewrite (subst_ty_mono_ty_poly_intro x) in H0. *)
+(*     apply gen_inst_fun in H0. destruct H0 as [T1' [T2' H3]]. eapply H3. *)
+    
+
+
+    
+(*     inversion H0; eauto. *)
+(*     + eapply IHHt... econstructor; intros. admit. *)
+(*     + eapply IHHt... econstructor; intros. specialize (H3 a ltac:(auto)). *)
+
+(*       apply gen_inst_ *)
+(* Qed. *)
 
 
 Lemma empty_ctx_typing_lc: forall e T,

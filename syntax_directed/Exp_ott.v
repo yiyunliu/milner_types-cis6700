@@ -330,14 +330,49 @@ end.
 
 (** definitions *)
 
+(* defns JInst *)
+Inductive inst : ty_poly -> ty_rho -> Prop :=    (* defn inst *)
+ | inst_refl : forall (rho:ty_rho),
+     lc_ty_rho rho ->
+     inst (ty_poly_rho rho) rho
+ | inst_trans : forall (L:vars) (sig:ty_poly) (rho:ty_rho),
+      ( forall a , a \notin  L  -> inst  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  rho )  ->
+     inst (ty_poly_poly_gen sig) rho.
+
+(* defns JPoly *)
+Inductive poly : ctx -> ty_mono -> ty_poly -> Prop :=    (* defn poly *)
+ | poly_gen_refl : forall (L:vars) (G:ctx) (tau:ty_mono) (rho:ty_rho),
+      ( forall a , a \notin  L  -> poly G tau (ty_poly_rho  ( open_ty_rho_wrt_ty_mono rho (ty_mono_var_f a) ) ) )  ->
+     poly G tau (ty_poly_poly_gen (ty_poly_rho rho))
+ | poly_gen_trans : forall (L:vars) (G:ctx) (tau:ty_mono) (sig:ty_poly),
+      ( forall a , a \notin  L  -> poly G tau  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  )  ->
+     poly G tau (ty_poly_poly_gen sig).
+
+(* defns JSh *)
+Inductive sh : ty_poly -> ty_poly -> Prop :=    (* defn sh *)
+ | sh_skol_base : forall (L:vars) (sig1:ty_poly) (rho:ty_rho),
+      ( forall a , a \notin  L  -> sh sig1 (ty_poly_rho  ( open_ty_rho_wrt_ty_mono rho (ty_mono_var_f a) ) ) )  ->
+     sh sig1 (ty_poly_poly_gen (ty_poly_rho rho))
+ | sh_skol_trans : forall (L:vars) (sig1 sig2:ty_poly),
+      ( forall a , a \notin  L  -> sh sig1  ( open_ty_poly_wrt_ty_mono sig2 (ty_mono_var_f a) )  )  ->
+     sh sig1 (ty_poly_poly_gen sig2)
+ | sh_spec_base : forall (rho1 rho2:ty_rho) (tau:ty_mono),
+     sh  (open_ty_poly_wrt_ty_mono (ty_poly_rho rho1) tau )  (ty_poly_rho rho2) ->
+     sh (ty_poly_poly_gen (ty_poly_rho rho1)) (ty_poly_rho rho2)
+ | sh_spec_trans : forall (sig1:ty_poly) (rho2:ty_rho) (tau:ty_mono),
+     sh  (open_ty_poly_wrt_ty_mono sig1 tau )  (ty_poly_rho rho2) ->
+     sh (ty_poly_poly_gen sig1) (ty_poly_rho rho2)
+ | sh_mono : forall (rho:ty_rho),
+     lc_ty_rho rho ->
+     sh (ty_poly_rho rho) (ty_poly_rho rho).
+
 (* defns JTyping *)
 Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
  | typ_int : forall (G:ctx) (i:integer),
      typing G  (exp_lit  i )  (ty_poly_rho (ty_rho_tau ty_mono_base))
- | typ_var : forall (G:ctx) (x:tmvar) (sig:ty_poly),
-      uniq  G  ->
-      binds x sig G  ->
-     typing G (exp_var_f x) sig
+ | typ_var : forall (G:ctx) (x:tmvar) (sig:ty_poly) (rho:ty_rho),
+     inst sig rho ->
+     typing  (( x ~ sig )++ G )  (exp_var_f x) sig
  | typ_abs : forall (L:vars) (G:ctx) (t:tm) (tau1 tau2:ty_mono),
       ( forall x , x \notin  L  -> typing  (( x ~ (ty_poly_rho (ty_rho_tau tau1)) )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho (ty_rho_tau tau2)) )  ->
      typing G  ( (exp_abs t) )  (ty_poly_rho  ( (ty_rho_tau (ty_mono_func tau1 tau2)) ) )
@@ -346,12 +381,13 @@ Inductive typing : ctx -> tm -> ty_poly -> Prop :=    (* defn typing *)
      typing G u (ty_poly_rho (ty_rho_tau tau1)) ->
      typing G (exp_app t u) (ty_poly_rho (ty_rho_tau tau2))
  | typ_let : forall (L:vars) (G:ctx) (u t:tm) (rho:ty_rho) (sig:ty_poly),
-     typing G u sig ->
+     typing G (exp_app (exp_var_f poly) u) sig ->
       ( forall x , x \notin  L  -> typing  (( x ~ sig )++ G )   ( open_tm_wrt_tm t (exp_var_f x) )  (ty_poly_rho rho) )  ->
      typing G (exp_let u t) (ty_poly_rho rho)
- | typ_annot : forall (G:ctx) (t:tm) (sig:ty_poly),
-      lc_ty_poly sig  /\ ftv_mono_ty_poly sig [=]{}  ->
-     typing G t sig ->
+ | typ_annot : forall (G:ctx) (t:tm) (sig sig1:ty_poly) (rho:ty_rho),
+     typing G (exp_app (exp_var_f poly) t) sig1 ->
+     inst sig rho ->
+     sh sig1 sig ->
      typing G  ( (exp_type_anno t sig) )  sig
  | typ_gen : forall (L:vars) (G:ctx) (t:tm) (sig:ty_poly),
       ( forall a , a \notin  L  -> typing G t  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  )  ->
@@ -405,17 +441,8 @@ Inductive step : tm -> tm -> Prop :=    (* defn step *)
      lc_tm t ->
      step (exp_type_anno t sig) t.
 
-(* defns JInst *)
-Inductive inst : ty_poly -> ty_rho -> Prop :=    (* defn inst *)
- | inst_refl : forall (rho:ty_rho),
-     lc_ty_rho rho ->
-     inst (ty_poly_rho rho) rho
- | inst_trans : forall (L:vars) (sig:ty_poly) (rho:ty_rho),
-      ( forall a , a \notin  L  -> inst  ( open_ty_poly_wrt_ty_mono sig (ty_mono_var_f a) )  rho )  ->
-     inst (ty_poly_poly_gen sig) rho.
-
 
 (** infrastructure *)
-#[export] Hint Constructors typing step inst lc_ty_mono lc_ty_rho lc_ty_poly lc_tm : core.
+#[export] Hint Constructors inst poly sh typing step lc_ty_mono lc_ty_rho lc_ty_poly lc_tm : core.
 
 

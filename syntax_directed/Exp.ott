@@ -192,6 +192,78 @@ formula :: 'formula_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Rules
 
+defns
+JInst :: '' ::=
+
+defn
+|-inst sig1 <= rho :: :: inst :: 'inst_'
+{{ tex \vdash^{\text{inst} }[[sig1]]\le[[rho]] }}
+by
+%  closed rho
+--------------------------------------------- :: refl
+ |-inst rho <= rho
+
+% %  closed r[ a |-> tau ] rho
+% --------------------------------------------- :: open
+%  |-inst forall a . sig <= [ a |-> tau ] sig
+
+%  closed tau
+ |-inst sig <= rho
+--------------------------------------------- :: trans
+ |-inst forall a . sig <= rho
+
+
+
+
+
+defns
+JPoly :: '' ::=
+
+defn
+G |-poly tau : sig :: :: poly :: 'poly_'
+{{ tex \vdash^{\text{poly} } [[tau]]:[[sig]] }}
+by
+
+G |-poly tau : rho
+------------------------------- :: gen_refl
+G |-poly tau : forall a . rho
+
+G |-poly tau : sig
+------------------------------- :: gen_trans
+G |-poly tau : forall a . sig
+
+
+
+
+defns
+JSh :: '' ::=
+
+defn
+|-sh sig1 <= sig2 :: :: sh :: 'sh_'
+{{ tex \vdash^{\text{sh} } [[sig1]]\le[[sig2]] }}
+by
+
+|-sh sig1 <= rho
+------------------ :: skol_base
+|-sh sig1 <= forall a . rho
+
+|-sh sig1 <= sig2
+------------------ :: skol_trans
+|-sh sig1 <= forall a . sig2
+
+|-sh [a|->tau] rho1 <= rho2
+------------------------------ :: spec_base
+|-sh forall a . rho1 <= rho2
+
+|-sh [a|->tau] sig1 <= rho2
+------------------------------ :: spec_trans
+|-sh forall a . sig1 <= rho2
+
+------------------------------ :: mono
+|-sh rho <= rho
+
+
+
 defns 
 JTyping :: '' ::=
 
@@ -203,10 +275,9 @@ by
 -------------- :: int
  G |- i : Int
 
- uniq G
- x : sig in G
+ |-inst sig <= rho
 -------------- :: var
- G |- x : sig
+ G, x : sig |- x : sig
 
  G, x : tau1 |- t : tau2
 ------------------------------- :: abs
@@ -217,13 +288,15 @@ by
 --------------------- :: app
  G |- t u : tau2
 
- G |- u : sig
+ G |-poly u : sig
  G, x : sig |- t : rho
 --------------------------- :: let
  G |- let x = u in t : rho
 
- closed sig
- G |- t : sig
+%  closed sig
+ G |-poly t : sig1
+ |-inst sig <= rho
+  |-sh sig1 <= sig
 --------------------------- :: annot
  G |- (annot t sig) : sig
 
@@ -278,25 +351,7 @@ by
  annot t sig --> t
 
 
-defns
-JInst :: '' ::=
 
-defn
-|-inst sig1 <= rho :: :: inst :: 'inst_'
-{{ tex \vdash^{\text{inst} }[[sig1]]\le[[rho]] }}
-by
-%  closed rho
---------------------------------------------- :: refl
- |-inst rho <= rho
-
-% %  closed r[ a |-> tau ] rho
-% --------------------------------------------- :: open
-%  |-inst forall a . sig <= [ a |-> tau ] sig
-
-%  closed tau
- |-inst sig <= rho
---------------------------------------------- :: trans
- |-inst forall a . sig <= rho
 
 % defns
 % JInstStep :: '' ::=

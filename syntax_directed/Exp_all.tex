@@ -111,6 +111,18 @@
 \ottprodline{|}{ \ottmv{a} \not\in \ottnt{ftvany} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottmv{x}  \ottsym{:}  \sigma \, \in \, \Gamma}{}{}{}{}}
 
+\newcommand{\ottJInst}{
+\ottrulehead{\ottnt{JInst}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{ \vdash^{\text{inst} } \sigma_{{\mathrm{1}}} \le \rho }{}{}{}{}}
+
+\newcommand{\ottJPoly}{
+\ottrulehead{\ottnt{JPoly}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{ \vdash^{\text{poly} }  \tau : \sigma }{}{}{}{}}
+
+\newcommand{\ottJSh}{
+\ottrulehead{\ottnt{JSh}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le \sigma_{{\mathrm{2}}} }{}{}{}{}}
+
 \newcommand{\ottJTyping}{
 \ottrulehead{\ottnt{JTyping}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \Gamma \vdash \ottnt{t} : \sigma }{}{}{}{}}
@@ -119,15 +131,13 @@
 \ottrulehead{\ottnt{JStep}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \ottnt{t}   \longrightarrow   \ottnt{u} }{}{}{}{}}
 
-\newcommand{\ottJInst}{
-\ottrulehead{\ottnt{JInst}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \vdash^{\text{inst} } \sigma_{{\mathrm{1}}} \le \rho }{}{}{}{}}
-
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{JTyping}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{JStep}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{JInst}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{JInst}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{JPoly}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{JSh}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{JTyping}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{JStep}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
@@ -156,14 +166,119 @@
 \ottftvany\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
+\ottJInst\ottinterrule
+\ottJPoly\ottinterrule
+\ottJSh\ottinterrule
 \ottJTyping\ottinterrule
 \ottJStep\ottinterrule
-\ottJInst\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
 }}
 
 % defnss
+% defns JInst
+%% defn inst
+\newcommand{\ottdruleinstXXrefl}[1]{\ottdrule[#1]{%
+}{
+ \vdash^{\text{inst} } \rho \le \rho }{%
+{\ottdrulename{inst\_refl}}{}%
+}}
+
+
+\newcommand{\ottdruleinstXXtrans}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{inst} } \sigma \le \rho }%
+}{
+ \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \sigma  \le \rho }{%
+{\ottdrulename{inst\_trans}}{}%
+}}
+
+\newcommand{\ottdefninst}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{inst} } \sigma_{{\mathrm{1}}} \le \rho $}{}
+\ottusedrule{\ottdruleinstXXrefl{}}
+\ottusedrule{\ottdruleinstXXtrans{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsJInst}{
+\ottdefninst{}}
+
+% defns JPoly
+%% defn poly
+\newcommand{\ottdrulepolyXXgenXXrefl}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{poly} }  \tau : \rho }%
+}{
+ \vdash^{\text{poly} }  \tau :  \forall  \ottmv{a}  .  \rho  }{%
+{\ottdrulename{poly\_gen\_refl}}{}%
+}}
+
+
+\newcommand{\ottdrulepolyXXgenXXtrans}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{poly} }  \tau : \sigma }%
+}{
+ \vdash^{\text{poly} }  \tau :  \forall  \ottmv{a}  .  \sigma  }{%
+{\ottdrulename{poly\_gen\_trans}}{}%
+}}
+
+\newcommand{\ottdefnpoly}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{poly} }  \tau : \sigma $}{}
+\ottusedrule{\ottdrulepolyXXgenXXrefl{}}
+\ottusedrule{\ottdrulepolyXXgenXXtrans{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsJPoly}{
+\ottdefnpoly{}}
+
+% defns JSh
+%% defn sh
+\newcommand{\ottdruleshXXskolXXbase}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le \rho }%
+}{
+ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le  \forall  \ottmv{a}  .  \rho  }{%
+{\ottdrulename{sh\_skol\_base}}{}%
+}}
+
+
+\newcommand{\ottdruleshXXskolXXtrans}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le \sigma_{{\mathrm{2}}} }%
+}{
+ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le  \forall  \ottmv{a}  .  \sigma_{{\mathrm{2}}}  }{%
+{\ottdrulename{sh\_skol\_trans}}{}%
+}}
+
+
+\newcommand{\ottdruleshXXspecXXbase}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{sh} }   \left[  \ottmv{a}  \mapsto  \tau  \right]  \rho_{{\mathrm{1}}}  \le \rho_{{\mathrm{2}}} }%
+}{
+ \vdash^{\text{sh} }   \forall  \ottmv{a}  .  \rho_{{\mathrm{1}}}  \le \rho_{{\mathrm{2}}} }{%
+{\ottdrulename{sh\_spec\_base}}{}%
+}}
+
+
+\newcommand{\ottdruleshXXspecXXtrans}[1]{\ottdrule[#1]{%
+\ottpremise{ \vdash^{\text{sh} }   \left[  \ottmv{a}  \mapsto  \tau  \right]  \sigma_{{\mathrm{1}}}  \le \rho_{{\mathrm{2}}} }%
+}{
+ \vdash^{\text{sh} }   \forall  \ottmv{a}  .  \sigma_{{\mathrm{1}}}  \le \rho_{{\mathrm{2}}} }{%
+{\ottdrulename{sh\_spec\_trans}}{}%
+}}
+
+
+\newcommand{\ottdruleshXXmono}[1]{\ottdrule[#1]{%
+}{
+ \vdash^{\text{sh} }  \rho \le \rho }{%
+{\ottdrulename{sh\_mono}}{}%
+}}
+
+\newcommand{\ottdefnsh}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le \sigma_{{\mathrm{2}}} $}{}
+\ottusedrule{\ottdruleshXXskolXXbase{}}
+\ottusedrule{\ottdruleshXXskolXXtrans{}}
+\ottusedrule{\ottdruleshXXspecXXbase{}}
+\ottusedrule{\ottdruleshXXspecXXtrans{}}
+\ottusedrule{\ottdruleshXXmono{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsJSh}{
+\ottdefnsh{}}
+
 % defns JTyping
 %% defn typing
 \newcommand{\ottdruletypXXint}[1]{\ottdrule[#1]{%
@@ -174,10 +289,9 @@
 
 
 \newcommand{\ottdruletypXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{uniq}\, \Gamma }%
-\ottpremise{\ottmv{x}  \ottsym{:}  \sigma \, \in \, \Gamma}%
+\ottpremise{ \vdash^{\text{inst} } \sigma \le \rho }%
 }{
- \Gamma \vdash \ottmv{x} : \sigma }{%
+ \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \sigma \vdash \ottmv{x} : \sigma }{%
 {\ottdrulename{typ\_var}}{}%
 }}
 
@@ -200,7 +314,7 @@
 
 
 \newcommand{\ottdruletypXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{ \Gamma \vdash \ottnt{u} : \sigma }%
+\ottpremise{ \Gamma \vdash  poly  \;  \ottnt{u}  : \sigma }%
 \ottpremise{ \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \sigma \vdash \ottnt{t} : \rho }%
 }{
  \Gamma \vdash  \texttt{let}\;  \ottmv{x}  =  \ottnt{u}  \;\texttt{in}\;  \ottnt{t}  : \rho }{%
@@ -209,8 +323,9 @@
 
 
 \newcommand{\ottdruletypXXannot}[1]{\ottdrule[#1]{%
-\ottpremise{ \mathsf{lc}\, \sigma }%
-\ottpremise{ \Gamma \vdash \ottnt{t} : \sigma }%
+\ottpremise{ \Gamma \vdash  poly  \;  \ottnt{t}  : \sigma_{{\mathrm{1}}} }%
+\ottpremise{ \vdash^{\text{inst} } \sigma \le \rho }%
+\ottpremise{ \vdash^{\text{sh} }  \sigma_{{\mathrm{1}}} \le \sigma }%
 }{
  \Gamma \vdash  (  \ottnt{t}  ::  \sigma  )  : \sigma }{%
 {\ottdrulename{typ\_annot}}{}%
@@ -332,35 +447,12 @@
 \newcommand{\ottdefnsJStep}{
 \ottdefnstep{}}
 
-% defns JInst
-%% defn inst
-\newcommand{\ottdruleinstXXrefl}[1]{\ottdrule[#1]{%
-}{
- \vdash^{\text{inst} } \rho \le \rho }{%
-{\ottdrulename{inst\_refl}}{}%
-}}
-
-
-\newcommand{\ottdruleinstXXtrans}[1]{\ottdrule[#1]{%
-\ottpremise{ \vdash^{\text{inst} } \sigma \le \rho }%
-}{
- \vdash^{\text{inst} }  \forall  \ottmv{a}  .  \sigma  \le \rho }{%
-{\ottdrulename{inst\_trans}}{}%
-}}
-
-\newcommand{\ottdefninst}[1]{\begin{ottdefnblock}[#1]{$ \vdash^{\text{inst} } \sigma_{{\mathrm{1}}} \le \rho $}{}
-\ottusedrule{\ottdruleinstXXrefl{}}
-\ottusedrule{\ottdruleinstXXtrans{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsJInst}{
-\ottdefninst{}}
-
 \newcommand{\ottdefnss}{
+\ottdefnsJInst
+\ottdefnsJPoly
+\ottdefnsJSh
 \ottdefnsJTyping
 \ottdefnsJStep
-\ottdefnsJInst
 }
 
 \newcommand{\ottall}{\ottmetavars\\[0pt]
@@ -371,7 +463,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        19 good    0 bad
-Definition rule clauses: 36 good    0 bad
+Definition rules:        26 good    0 bad
+Definition rule clauses: 49 good    0 bad
 \end{verbatim}
 \end{document}

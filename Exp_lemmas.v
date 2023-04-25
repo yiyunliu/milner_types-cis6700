@@ -129,12 +129,13 @@ Proof with eauto.
       destruct tau0; try discriminate. exists tau0_1. exists tau0_2.
       constructor. rewrite H1 in H...
       induction tau0; simpl in H1; try discriminate. destruct (a == x0).
-      ++ destruct tau; try discriminate. injection H1; intros; subst.
-         inversion H; subst. inversion H2; subst. 
+      ++ destruct tau; try discriminate. injection H1; intros; subst. 
+         inversion H; subst. inversion H2; subst.
          (* Don't know how to proceed *) admit.
       ++ discriminate.
-      ++ simpl.
-         Search union. injection H1; intros. admit. (* apply notin_union_3. *)
+      ++ Search union. apply notin_union_3.
+         +++ apply IHtau0_1. simpl. injection H1; intros.  admit. (* apply notin_union_3. *)
+         +++ admit.
     + simpl in x. discriminate.
   - destruct sig.
     + simpl in x. discriminate.
@@ -153,6 +154,20 @@ Proof with eauto.
       
       admit.
 Admitted.
+
+
+(* Theorem canonical_forms_fun : forall t T1 T2, *)
+(*     typing empty t (ty_poly_rho (ty_rho_tau (ty_mono_func T1 T2))) *)
+(*     -> inst (ty_poly_rho (ty_rho_tau (ty_mono_func T1 T2))) (ty_rho_tau (ty_mono_func T1 T2)) *)
+(*     -> is_value_of_tm t *)
+(*     -> exists u, t = exp_abs u. *)
+(* Proof with eauto. *)
+(*   intros t T1 T2. remember (ty_poly_rho (ty_rho_tau (ty_mono_func T1 T2))) as T. *)
+(*   induction t; intros; inversion H1. *)
+(*   - rewrite HeqT in H. inversion H. inversion H6; subst. *)
+(*     + induction sig. *)
+(*       ++ unfold  *)
+
 
 
 Theorem canonical_forms_fun: forall t T,
@@ -178,8 +193,13 @@ Proof with eauto.
     specialize (H0 T1' T2' H4 H2)... fsetdec.
   - pick fresh x. rewrite (subst_ty_mono_ty_poly_intro x) in H0.
     eapply gen_inst_fun in H0. destruct H0 as [T1' [T2' H2]].
-    apply IHHt with T1' T2'; eauto. econstructor. intros. admit.
-    auto. Unshelve. apply (fv_tm t).
+    apply IHHt with T1' T2'; eauto. apply inst_trans with (fv_tm t).
+    destruct sig; unfold open_ty_poly_wrt_ty_mono in *; simpl.
+    + 
+
+    intros. 
+    admit.
+    auto. Unshelve. 
 Admitted.
 
 (*     econstructor. *)
@@ -672,9 +692,16 @@ Proof with eauto.
 
 
         pick fresh x. rewrite (subst_tm_intro x); auto. eapply typing_subst_simple; eauto. simpl.
+         
+
+
+
          Print typing.
          admit.
-    + admit.
+    + 
+
+
+      admit.
     (* inversion J; subst; eauto. *)
     (* + inversion Htyp1; subst. *)
     (*   * pick fresh y for (L \u fv_tm t0). *)

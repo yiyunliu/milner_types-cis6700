@@ -218,13 +218,14 @@ Fixpoint bad_fun_poly ρ :=
   | ty_poly_poly_gen ρ => bad_fun_poly ρ
   end.
 
-Theorem wt_implies_no_bad_poly t ρ
-  (h : typing empty t ρ) :
+Theorem wt_implies_no_bad_poly Γ t ρ
+  (h : typing Γ t ρ) :
   is_value_of_tm t ->
   ~~ bad_fun_poly ρ.
 Proof.
-  dependent induction h; try (by []).
-  - pick fresh x; repeat (spec x).
+  elim : Γ t ρ / h; try (by []).
+  - move => *;
+    pick fresh x; repeat (spec x);
     hauto q:on inv:ty_mono, ty_rho, ty_poly.
   - hauto q:on inv:ty_mono, ty_rho, ty_poly.
 Qed.
@@ -245,8 +246,7 @@ Proof with eauto.
   intros t T Ht.
   dependent induction Ht; subst; try discriminate; try by []; intros.
   - hauto lq:on.
-  - simpl in H1.
-    pick fresh x; repeat (spec x).
+  - pick fresh x; repeat (spec x).
     eapply_first_hyp; eauto.
     hauto lq:on use:is_fun_poly_open.
   - eapply_first_hyp; eauto.

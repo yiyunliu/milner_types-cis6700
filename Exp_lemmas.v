@@ -306,7 +306,8 @@ Proof with eauto.
   induction H0; subst;
   try (left; constructor)...
   - right; destruct IHtyping1; destruct IHtyping2...
-    + assert (Hlam: exists u, t = exp_abs u).
+    + assert (Hlam: exists u, t = exp_abs u) by
+      sfirstorder use:canonical_forms_fun.
       { apply (canonical_forms_fun t _ H0_ tau1 tau2)... constructor.
         eapply empty_ctx_typing_lc_ty in H0_. inversion H0_... }
       destruct Hlam; subst...

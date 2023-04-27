@@ -168,39 +168,83 @@ Admitted.
 (*     + induction sig. *)
 (*       ++ unfold  *)
 
+Fixpoint is_fun_mono τ :=
+  match τ with
+  | ty_mono_func _ _ => true
+  | _ => false
+  end.
 
+Fixpoint is_fun_rho ρ :=
+  match ρ with
+  | ty_rho_tau τ => is_fun_mono τ
+  end.
 
-Theorem canonical_forms_fun: forall t T,
-  typing empty t T
-    -> forall T1 T2, inst T (ty_rho_tau (ty_mono_func T1 T2))
+Fixpoint is_fun_poly ρ :=
+  match ρ with
+  | ty_poly_rho ρ' => is_fun_rho ρ'
+  | ty_poly_poly_gen ρ' => is_fun_poly ρ'
+  end.
+
+From Coq Require Import ssreflect ssrfun ssrbool.
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+From Hammer Require Import Tactics.
+
+Lemma is_fun_poly_open ρ τ :
+  is_fun_poly ρ -> is_fun_poly (open_ty_poly_wrt_ty_mono ρ τ).
+Proof.
+  elim : ρ τ; sauto lq:on.
+Qed.
+
+(* Lemma open_preserves_fun_poly ρ τ : *)
+(*   is_fun_poly (open_tm_wrt_tm ρ τ) = is_fun_poly ρ *)
+
+Fixpoint bad_empty_mono τ :=
+  match τ with
+  | ty_mono_var_b _ => true
+  | ty_mono_var_f _ => true
+  | _ => false
+  end.
+
+Fixpoint bad_fun_rho ρ :=
+  match ρ with
+  | ty_rho_tau τ => bad_empty_mono τ
+  end.
+
+Fixpoint bad_fun_poly ρ :=
+  match ρ with
+  | ty_poly_rho ρ => bad_fun_rho ρ
+  | ty_poly_poly_gen ρ => bad_fun_poly ρ
+  end.
+
+Theorem wt_implies_no_bad_poly t ρ
+  (h : typing empty t ρ) :
+  is_value_of_tm t ->
+  ~~ bad_fun_poly ρ.
+Proof.
+  dependent induction h; try (by []).
+  - pick fresh x; repeat (spec x).
+    hauto q:on inv:ty_mono, ty_rho, ty_poly.
+  - hauto q:on inv:ty_mono, ty_rho, ty_poly.
+Qed.
+
+Theorem canonical_forms_fun: forall t ρ,
+  typing empty t ρ
+    -> is_fun_poly ρ
     -> is_value_of_tm t
     -> exists u, t = exp_abs u.
 Proof with eauto.
   intros t T Ht.
-  dependent induction Ht; subst; try discriminate; intros.
-  - inversion H.
-  - inversion H2.
-  - exists t. reflexivity.
-  - inversion H0.
-  - inversion H2.
-  - inversion H1.
-  - inversion H1; subst.
-    pick fresh x.
-    specialize (H0 x ltac:(auto) ltac:(auto)).
-    specialize (H4 x ltac:(auto)).
-    rewrite (subst_ty_mono_ty_poly_intro x) in H4.
-    apply gen_inst_fun in H4. destruct H4 as [T1' [T2' H4]].
-    specialize (H0 T1' T2' H4 H2)... fsetdec.
-  - pick fresh x. rewrite (subst_ty_mono_ty_poly_intro x) in H0.
-    eapply gen_inst_fun in H0. destruct H0 as [T1' [T2' H2]].
-    apply IHHt with T1' T2'; eauto. apply inst_trans with (fv_tm t).
-    destruct sig; unfold open_ty_poly_wrt_ty_mono in *; simpl.
-    + 
+  dependent induction Ht; subst; try discriminate; try by []; intros.
+  - hauto lq:on.
+  - simpl in H1.
+    pick fresh x; repeat (spec x).
+    eapply_first_hyp; eauto.
+    hauto lq:on use:is_fun_poly_open.
+  - eapply_first_hyp; eauto.
+    simpl.
 
-    intros. 
-    admit.
-    auto. Unshelve. 
-Admitted.
 
 (*     econstructor. *)
 (*     +  *)

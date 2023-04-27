@@ -229,6 +229,13 @@ Proof.
   - hauto q:on inv:ty_mono, ty_rho, ty_poly.
 Qed.
 
+Lemma bad_fun_poly_open : forall ρ τ,
+  ~~ bad_fun_poly ρ ->
+  is_fun_poly (open_ty_poly_wrt_ty_mono ρ τ) =
+    is_fun_poly ρ.
+  case; sauto lq:on.
+Qed.
+
 Theorem canonical_forms_fun: forall t ρ,
   typing empty t ρ
     -> is_fun_poly ρ
@@ -243,28 +250,8 @@ Proof with eauto.
     eapply_first_hyp; eauto.
     hauto lq:on use:is_fun_poly_open.
   - eapply_first_hyp; eauto.
-    simpl.
-
-
-(*     econstructor. *)
-(*     +  *)
-
-
-
-
-(*     pick fresh x. *)
-(*     rewrite (subst_ty_mono_ty_poly_intro x) in H0. *)
-(*     apply gen_inst_fun in H0. destruct H0 as [T1' [T2' H3]]. eapply H3. *)
-    
-
-
-    
-(*     inversion H0; eauto. *)
-(*     + eapply IHHt... econstructor; intros. admit. *)
-(*     + eapply IHHt... econstructor; intros. specialize (H3 a ltac:(auto)). *)
-
-(*       apply gen_inst_ *)
-(* Qed. *)
+    hauto q:on use:bad_fun_poly_open, wt_implies_no_bad_poly.
+Qed.
 
 
 Lemma empty_ctx_typing_lc: forall e T,

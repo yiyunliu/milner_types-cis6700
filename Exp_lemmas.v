@@ -191,15 +191,6 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 From Hammer Require Import Tactics.
 
-Lemma is_fun_poly_open ρ τ :
-  is_fun_poly ρ -> is_fun_poly (open_ty_poly_wrt_ty_mono ρ τ).
-Proof.
-  elim : ρ τ; sauto lq:on.
-Qed.
-
-(* Lemma open_preserves_fun_poly ρ τ : *)
-(*   is_fun_poly (open_tm_wrt_tm ρ τ) = is_fun_poly ρ *)
-
 Fixpoint bad_empty_mono τ :=
   match τ with
   | ty_mono_var_b _ => true
@@ -218,6 +209,46 @@ Fixpoint bad_fun_poly ρ :=
   | ty_poly_poly_gen ρ => bad_fun_poly ρ
   end.
 
+Lemma is_fun_poly_open_var_rec : forall ρ n x,
+  is_fun_poly (open_ty_poly_wrt_ty_mono_rec n (ty_mono_var_f x) ρ) =
+  is_fun_poly ρ.
+  elim.
+  - hauto q:on inv:ty_rho,ty_poly,ty_mono.
+  - hauto q:on inv:ty_rho,ty_poly,ty_mono.
+Qed.
+
+Lemma bad_fun_poly_open_var_rec : forall ρ n x,
+  bad_fun_poly (open_ty_poly_wrt_ty_mono_rec n (ty_mono_var_f x) ρ) =
+  bad_fun_poly ρ.
+  elim.
+  - hauto q:on inv:ty_rho,ty_poly,ty_mono.
+  - hauto q:on inv:ty_rho,ty_poly,ty_mono.
+Qed.
+
+Lemma bad_fun_poly_open_var : forall ρ x,
+  bad_fun_poly (open_ty_poly_wrt_ty_mono ρ (ty_mono_var_f x)) =
+    bad_fun_poly ρ.
+Proof.
+  sfirstorder use:bad_fun_poly_open_var_rec.
+Qed.
+
+Lemma is_fun_poly_open_rec : forall ρ n τ,
+  ~~ bad_fun_poly ρ ->
+  is_fun_poly (open_ty_poly_wrt_ty_mono_rec n τ ρ) =
+    is_fun_poly ρ.
+  elim.
+  - hauto lq:on inv:ty_rho,ty_poly,ty_mono.
+  - hauto l:on.
+Qed.
+
+Lemma bad_fun_poly_open_rec  : forall ρ n τ,
+  ~~ bad_fun_poly ρ ->
+  ~~ bad_fun_poly (open_ty_poly_wrt_ty_mono_rec n τ ρ).
+  elim.
+  - hauto lq:on inv:ty_rho,ty_poly,ty_mono.
+  - hauto l:on.
+Qed.
+
 Theorem wt_implies_no_bad_poly Γ t ρ
   (h : typing Γ t ρ) :
   is_value_of_tm t ->
@@ -225,16 +256,9 @@ Theorem wt_implies_no_bad_poly Γ t ρ
 Proof.
   elim : Γ t ρ / h; try (by []).
   - move => *;
-    pick fresh x; repeat (spec x);
-    hauto q:on inv:ty_mono, ty_rho, ty_poly.
-  - hauto q:on inv:ty_mono, ty_rho, ty_poly.
-Qed.
-
-Lemma bad_fun_poly_open : forall ρ τ,
-  ~~ bad_fun_poly ρ ->
-  is_fun_poly (open_ty_poly_wrt_ty_mono ρ τ) =
-    is_fun_poly ρ.
-  case; sauto lq:on.
+           pick fresh x; repeat (spec x).
+    hauto q:on use:bad_fun_poly_open_var.
+  - hauto l:on use:bad_fun_poly_open_rec.
 Qed.
 
 Theorem canonical_forms_fun: forall t ρ,
@@ -248,9 +272,12 @@ Proof with eauto.
   - hauto lq:on.
   - pick fresh x; repeat (spec x).
     eapply_first_hyp; eauto.
-    hauto lq:on use:is_fun_poly_open.
+    rewrite is_fun_poly_open_rec; eauto.
+    apply wt_implies_no_bad_poly in H; auto.
+    by rewrite bad_fun_poly_open_var in H.
   - eapply_first_hyp; eauto.
-    hauto q:on use:bad_fun_poly_open, wt_implies_no_bad_poly.
+    rewrite is_fun_poly_open_rec in H0; auto.
+    sfirstorder use: bad_fun_poly_open_var_rec, wt_implies_no_bad_poly.
 Qed.
 
 
